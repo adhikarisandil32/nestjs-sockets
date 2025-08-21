@@ -20,8 +20,8 @@ import { IDbConfig } from '../configs/database.config';
           host: dbConfig?.host,
           port: dbConfig?.port,
           synchronize: dbConfig?.synchronize,
-          entities: [__dirname + '/**/*.entity.{js,ts}'],
-          migrations: [__dirname + '/migrations/*.{js,ts}'],
+          entities: [__dirname + './../../**/*.entity{.ts,.js}'],
+          migrations: [__dirname + './../../migrations/*{.ts,.js}'],
         };
       },
       dataSourceFactory: async (options: DataSourceOptions) => {
