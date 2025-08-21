@@ -21,10 +21,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     console.log(`client ${client.id} connected`);
     this.connectedUsers.add(client.id);
     this.connectedUsersCount++;
-    this.server.emit('connections', {
-      users: Array.from(this.connectedUsers),
-      count: this.connectedUsersCount,
-    });
+    this.showConnectedClients();
   }
 
   handleDisconnect(@ConnectedSocket() client: Socket) {
@@ -32,6 +29,10 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     client.disconnect();
     this.connectedUsers.delete(client.id);
     this.connectedUsersCount--;
+    this.showConnectedClients();
+  }
+
+  showConnectedClients() {
     this.server.emit('connections', {
       users: Array.from(this.connectedUsers),
       count: this.connectedUsersCount,
