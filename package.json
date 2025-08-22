@@ -26,9 +26,10 @@
     "migration:run": "npm run typeorm -- -d src/common/database/data-source.ts migration:run",
     "migration:run:fake": "npm run migration:run --fake",
     "migration:revert": "npm run typeorm -- -d src/common/database/data-source.ts migration:revert",
-    "seed:db": "npx nestjs-command seed:db"
+    "db:seed": "npx nestjs-command db:seed"
   },
   "dependencies": {
+    "@faker-js/faker": "^9.9.0",
     "@nestjs/common": "^11.0.1",
     "@nestjs/core": "^11.0.1",
     "@nestjs/mapped-types": "^2.1.0",
