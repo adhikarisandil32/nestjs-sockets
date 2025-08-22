@@ -13,8 +13,8 @@ async function bootstrap() {
   } catch (error) {
     console.error(error);
     await app.close();
-    process.exit(0);
   }
+  process.exit(0);
 }
 
 bootstrap();
