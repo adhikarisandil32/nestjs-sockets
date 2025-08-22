@@ -20,5 +20,5 @@ export class GroupEntity extends DBBaseEntity {
       referencedColumnName: 'id',
     },
   })
-  users: UserEntity;
+  users: UserEntity[];
 }
