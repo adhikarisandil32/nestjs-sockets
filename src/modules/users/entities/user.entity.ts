@@ -1,10 +1,17 @@
 import { UserBaseEntity } from 'src/common/database/entities/user.base.entity';
 import { Column, Entity } from 'typeorm';
+import { USER_ROLE } from '../constants/user.constant';
 
 @Entity({ name: 'users' })
 export class UserEntity extends UserBaseEntity {
-  @Column({ name: 'role', enum: ['admin', 'user'], default: 'user' })
-  role: string;
+  @Column({
+    name: 'role',
+    type: 'enum',
+    enum: USER_ROLE,
+    default: USER_ROLE.USER,
+    nullable: false,
+  })
+  role: USER_ROLE;
 
   @Column({ name: 'is_active', default: false })
   isActive: boolean;
