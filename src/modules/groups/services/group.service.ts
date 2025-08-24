@@ -15,7 +15,7 @@ export class GroupsService {
     const existingUsers = await this._dataSource
       .getRepository(UserEntity)
       .find({
-        where: createGroupDto.userIds.map((userId) => ({
+        where: createGroupDto.ids.map((userId) => ({
           id: userId,
         })),
       });
@@ -32,24 +32,50 @@ export class GroupsService {
 
   async addMembers({
     groupId,
-    memberIds,
+    newMemberIds,
   }: {
     groupId: number;
-    memberIds: number[];
+    newMemberIds: number[];
   }) {
     const newMembers = await this._dataSource.getRepository(UserEntity).find({
       where: {
-        id: In(memberIds),
+        id: In(newMemberIds),
+      },
+    });
+
+    const queryBuilder = this._dataSource.createQueryBuilder();
+
+    // await queryBuilder
+    //   .relation(GroupEntity, 'users')
+    //   .of(groupId)
+    //   .add(newMembers);
+
+    await queryBuilder
+      .insert()
+      .into('groups_users')
+      .values(
+        newMembers.map((member) => ({
+          group_id: groupId,
+          user_id: member.id,
+        })),
+      )
+      .orIgnore()
+      .execute();
+  }
+
+  async removeMember({
+    groupId,
+    memberId,
+  }: {
+    groupId: number;
+    memberId: number;
+  }) {
+    const member = await this._dataSource.getRepository(UserEntity).findOne({
+      where: {
+        id: memberId,
       },
     });
 
     const queryBuilder = this._groupRepo.createQueryBuilder();
-
-    await queryBuilder
-      .relation(GroupEntity, 'users')
-      .of(groupId)
-      .add(newMembers);
   }
-
-  async removeMember(groupId: number, memberId: number) {}
 }
