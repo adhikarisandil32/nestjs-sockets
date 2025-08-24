@@ -1,6 +1,7 @@
 import { Body, Controller, Param, Patch, Post } from '@nestjs/common';
 import { CreateGroupDto } from '../dtos/create.group.dto';
 import { GroupsService } from '../services/group.service';
+import { UpdateGroupDto } from '../dtos/update.group.dto';
 
 @Controller('groups')
 export class GroupsController {
@@ -12,5 +13,17 @@ export class GroupsController {
   }
 
   @Patch(':id/add-members')
-  addMembers(@Param('id') groupId: number, @Body() members: CreateGroupDto) {}
+  async addMembers(
+    @Param('id') groupId: number,
+    @Body() updateGroupDto: UpdateGroupDto,
+  ) {
+    if (updateGroupDto.ids == null || updateGroupDto.ids.length <= 0) {
+      return;
+    }
+
+    return await this._groupService.addMembers({
+      groupId,
+      newMemberIds: updateGroupDto.ids,
+    });
+  }
 }
