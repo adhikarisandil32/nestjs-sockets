@@ -1,8 +1,9 @@
 import { UserBaseEntity } from 'src/common/database/entities/user.base.entity';
 import { Column, Entity } from 'typeorm';
 import { USER_ROLE } from '../constants/user.constant';
+import { TableNames } from 'src/common/database/constants/common.constant';
 
-@Entity({ name: 'users' })
+@Entity({ name: TableNames.UsersTable })
 export class UserEntity extends UserBaseEntity {
   @Column({
     name: 'role',
