@@ -3,6 +3,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule, TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { DataSource, DataSourceOptions } from 'typeorm';
 import { IDbConfig } from '../configs/database.config';
+// const path = require('path')
 
 @Module({
   imports: [
@@ -10,6 +11,8 @@ import { IDbConfig } from '../configs/database.config';
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (configService: ConfigService): TypeOrmModuleOptions => {
+        // console.log(path.resolve(__dirname + './../../**/*.entity{.ts,.js}'))
+
         const dbConfig = configService.get<IDbConfig>('database');
 
         return {
@@ -20,8 +23,8 @@ import { IDbConfig } from '../configs/database.config';
           host: dbConfig?.host,
           port: dbConfig?.port,
           synchronize: dbConfig?.synchronize,
-          entities: [__dirname + '/**/*.entity.{js,ts}'],
-          migrations: [__dirname + '/migrations/*.{js,ts}'],
+          entities: [__dirname + './../../**/*.entity{.ts,.js}'],
+          migrations: [__dirname + './../../migrations/*{.ts,.js}'],
         };
       },
       dataSourceFactory: async (options: DataSourceOptions) => {

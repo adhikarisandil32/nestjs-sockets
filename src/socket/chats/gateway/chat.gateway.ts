@@ -1,13 +1,12 @@
 import {
   ConnectedSocket,
-  MessageBody,
   OnGatewayConnection,
   OnGatewayDisconnect,
-  SubscribeMessage,
   WebSocketGateway,
   WebSocketServer,
+  WsResponse,
 } from '@nestjs/websockets';
-import { Socket, Server } from 'socket.io';
+import { Server, Socket } from 'socket.io';
 
 @WebSocketGateway({ namespace: 'chat' })
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
@@ -21,10 +20,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     console.log(`client ${client.id} connected`);
     this.connectedUsers.add(client.id);
     this.connectedUsersCount++;
-    this.server.emit('connections', {
-      users: Array.from(this.connectedUsers),
-      count: this.connectedUsersCount,
-    });
+    this.showConnectedClients();
   }
 
   handleDisconnect(@ConnectedSocket() client: Socket) {
@@ -32,14 +28,19 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     client.disconnect();
     this.connectedUsers.delete(client.id);
     this.connectedUsersCount--;
-    this.server.emit('connections', {
-      users: Array.from(this.connectedUsers),
-      count: this.connectedUsersCount,
-    });
+    this.showConnectedClients();
   }
 
-  @SubscribeMessage('message')
-  handleEvent(@MessageBody() data: any, @ConnectedSocket() client: Socket) {
-    this.server.emit('message', { client: client.id, message: data });
+  showConnectedClients() {
+    // this.server.emit('connections', {
+    //   users: Array.from(this.connectedUsers),
+    //   count: this.connectedUsersCount,
+    // });
+  }
+
+  createRoom(socket: Socket, data: string) {
+    socket.join('aRoom');
+    socket.to('aRoom').emit('roomCreated', { room: 'aRoom' });
+    return { event: 'roomCreated', room: 'aRoom' };
   }
 }
