@@ -11,7 +11,7 @@ import {
 
 @Entity({ name: 'groups' })
 export class GroupEntity extends DBBaseEntity {
-  @Column({ name: 'name', nullable: false, default: 'my group' })
+  @Column({ name: 'name', default: 'my group' })
   name: string;
 
   @ManyToOne(() => UserEntity, (user) => user.id, { nullable: false })
