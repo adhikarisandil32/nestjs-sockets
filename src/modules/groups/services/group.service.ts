@@ -49,30 +49,6 @@ export class GroupsService {
       },
     });
 
-    console.log(newMembers);
-
-    // const groupInfo = await this._groupRepo.findOne({
-    //   where: { id: groupId },
-    //   relations: ['users'],
-    //   select: {
-    //     id: true,
-    //     users: {
-    //       id: true,
-    //     },
-    //   },
-    // });
-
-    // if (!groupInfo) {
-    //   return;
-    // }
-
-    // const preparedDataForUpdate: GroupEntity = {
-    //   ...groupInfo,
-    //   users: [...newMembers, ...(groupInfo.users ?? [])],
-    // };
-
-    // await this._groupRepo.save(preparedDataForUpdate);
-
     const queryBuilder = this._dataSource.createQueryBuilder();
 
     await queryBuilder
@@ -95,23 +71,11 @@ export class GroupsService {
     groupId: number;
     memberIds: number[];
   }) {
-    const queryBuilder = this._groupRepo.createQueryBuilder('g');
+    const queryBuilder = this._groupRepo.createQueryBuilder();
 
-    const groupWithAdmin = await queryBuilder
-      .leftJoinAndSelect('g.groupAdmin', 'group_ad')
-      .addSelect(['group_ad.id', 'group_ad.name', 'group_ad.email'])
-      .where('g.id = :groupId', { groupId })
-      .getMany();
-
-    // const groupWithAdmin = await this._groupRepo.find({
-    //   relations: ['users', 'groupAdmin'],
-    // });
-
-    console.log(groupWithAdmin);
-
-    // await queryBuilder
-    //   .relation(TableNames.GroupsTable, TableNames.UsersTable)
-    //   .of(groupId)
-    //   .remove(memberIds);
+    await queryBuilder
+      .relation(TableNames.GroupsTable, TableNames.UsersTable)
+      .of(groupId)
+      .remove(memberIds);
   }
 }
