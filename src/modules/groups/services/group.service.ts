@@ -1,6 +1,6 @@
 import { InjectRepository } from '@nestjs/typeorm';
 import { GroupEntity } from '../entities/group.entity';
-import { DataSource, In, Not, Repository } from 'typeorm';
+import { DataSource, In, Not, Repository, Table } from 'typeorm';
 import { CreateGroupDto } from '../dtos/create.group.dto';
 import { UserEntity } from 'src/modules/users/entities/user.entity';
 import { TableNames } from 'src/common/database/constants/common.constant';
@@ -49,34 +49,43 @@ export class GroupsService {
       },
     });
 
-    // const queryBuilder = this._dataSource.createQueryBuilder();
+    console.log(newMembers);
 
-    // const insertQuery = await queryBuilder
-    //   .insert()
-    //   .into(TableNames.UsersGroupsLinkerTable)
-    //   .values(
-    //     newMembers.map((member) => ({
-    //       group_id: groupId,
-    //       user_id: member.id,
-    //     })),
-    //   )
-    //   .orIgnore()
-    //   .execute();
+    // const groupInfo = await this._groupRepo.findOne({
+    //   where: { id: groupId },
+    //   relations: ['users'],
+    //   select: {
+    //     id: true,
+    //     users: {
+    //       id: true,
+    //     },
+    //   },
+    // });
 
-    const groupInfo = await this._groupRepo.findOne({
-      where: { id: groupId },
-    });
+    // if (!groupInfo) {
+    //   return;
+    // }
 
-    if (!groupInfo) {
-      return;
-    }
+    // const preparedDataForUpdate: GroupEntity = {
+    //   ...groupInfo,
+    //   users: [...newMembers, ...(groupInfo.users ?? [])],
+    // };
 
-    const preparedDataForUpdate: GroupEntity = {
-      ...groupInfo,
-      users: newMembers,
-    };
+    // await this._groupRepo.save(preparedDataForUpdate);
 
-    await this._groupRepo.save(preparedDataForUpdate);
+    const queryBuilder = this._dataSource.createQueryBuilder();
+
+    await queryBuilder
+      .insert()
+      .into(TableNames.UsersGroupsLinkerTable)
+      .values(
+        newMembers.map((member) => ({
+          group_id: groupId,
+          user_id: member.id,
+        })),
+      )
+      .orIgnore()
+      .execute();
   }
 
   async removeMembers({
@@ -86,32 +95,23 @@ export class GroupsService {
     groupId: number;
     memberIds: number[];
   }) {
-    const groupInfo = await this._groupRepo.findOne({
-      // in this query, we fetch that users from groups that are not provided on the memberIds, so that we can directly use them to save method. However holding millions of data in memory can be very expensive memory task.
-      where: {
-        id: groupId,
-        users: {
-          id: Not(In(memberIds)),
-        },
-      },
-      relations: ['users'],
-      select: {
-        id: true,
-        users: {
-          id: true,
-        },
-      },
-    });
+    const queryBuilder = this._groupRepo.createQueryBuilder('g');
 
-    if (!groupInfo) {
-      return;
-    }
+    const groupWithAdmin = await queryBuilder
+      .leftJoinAndSelect('g.groupAdmin', 'group_ad')
+      .addSelect(['group_ad.id', 'group_ad.name', 'group_ad.email'])
+      .where('g.id = :groupId', { groupId })
+      .getMany();
 
-    const preparedGroupUpdateData: GroupEntity = {
-      ...groupInfo,
-      users: groupInfo.users,
-    };
+    // const groupWithAdmin = await this._groupRepo.find({
+    //   relations: ['users', 'groupAdmin'],
+    // });
 
-    await this._groupRepo.save(preparedGroupUpdateData);
+    console.log(groupWithAdmin);
+
+    // await queryBuilder
+    //   .relation(TableNames.GroupsTable, TableNames.UsersTable)
+    //   .of(groupId)
+    //   .remove(memberIds);
   }
 }
