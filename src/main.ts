@@ -3,6 +3,7 @@ import { AppModule } from './app.module';
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as fs from 'fs';
+import { APP_MODE } from './common/configs/app.config';
 
 async function bootstrap() {
   const logger = new Logger('NestApplication');
@@ -21,8 +22,11 @@ async function bootstrap() {
   );
   app.setGlobalPrefix('api');
 
-  if (configService.get<string>('app.mode') !== 'production') {
+  if (configService.get<string>('app.mode') === APP_MODE.DEV) {
     // to monitor the nestapp's process memory
+
+    const filePath = './app_memory_usage_logs.txt';
+
     try {
       setInterval(() => {
         const processMemory = process.memoryUsage();
@@ -38,11 +42,22 @@ async function bootstrap() {
             arrayBuffers: `${(processMemory.arrayBuffers / (1024 * 1024)).toFixed(2)} MB`,
           };
 
+          if (!fs.existsSync(filePath)) {
+            fs.writeFile(
+              filePath,
+              JSON.stringify(processMemoryInMb),
+              () => null,
+            );
+            return;
+          }
+
           fs.appendFile(
-            './app_memory_usage_logs.txt',
+            filePath,
             ', ' + JSON.stringify(processMemoryInMb),
             () => null,
           );
+
+          return;
         }
       }, 1000);
     } catch (error) {
