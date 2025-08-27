@@ -31,7 +31,23 @@ export class GroupsService {
     return groupMembers;
   }
 
-  async getGroupInfo(groupId: number) {}
+  async getGroupMembers(groupId: number) {
+    const queryBuilder = this._dataSource.createQueryBuilder();
+
+    const groupMembersQuery = queryBuilder
+      .from(TableNames.UsersGroupsLinkerTable, 'ug')
+      .leftJoinAndSelect(TableNames.UsersTable, 'u', 'u.id = ug.user_id')
+      .leftJoinAndSelect(TableNames.GroupsTable, 'g', 'g.id = ug.group_id')
+      .select(['g.id group_id', 'g.name group_name', 'u.*'])
+      .where('ug.group_id = :groupId', { groupId });
+
+    const groupMembers = await groupMembersQuery.getRawMany();
+
+    // console.log(groupMembersQuery.getQueryAndParameters());
+    // console.log(groupMembers);
+
+    return groupMembers;
+  }
 
   async addMembers({
     groupId,
@@ -62,6 +78,8 @@ export class GroupsService {
       )
       .orIgnore()
       .execute();
+
+    return;
   }
 
   async removeMembers({
@@ -71,11 +89,13 @@ export class GroupsService {
     groupId: number;
     memberIds: number[];
   }) {
-    const queryBuilder = this._groupRepo.createQueryBuilder();
+    const queryBuilder = this._dataSource.createQueryBuilder();
 
     await queryBuilder
       .relation(TableNames.GroupsTable, TableNames.UsersTable)
       .of(groupId)
       .remove(memberIds);
+
+    return;
   }
 }
