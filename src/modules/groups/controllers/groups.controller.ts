@@ -7,9 +7,9 @@ import { AddMmbersDto, RemoveMembersDto } from '../dtos/update.group.dto';
 export class GroupsController {
   constructor(private readonly _groupService: GroupsService) {}
 
-  @Get(':id')
-  async getGroupById(@Param() groupId: number) {
-    return await this._groupService.getGroupInfo(groupId);
+  @Get(':id/members')
+  async getGroupById(@Param('id') groupId: number) {
+    return await this._groupService.getGroupMembers(groupId);
   }
 
   @Post('create')
