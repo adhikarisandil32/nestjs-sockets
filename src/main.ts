@@ -6,12 +6,11 @@ import * as fs from 'fs';
 import { APP_MODE } from './common/configs/app.config';
 
 async function bootstrap() {
-  const logger = new Logger('NestApplication');
+  const logger = new Logger('Bootstrap');
 
   const app = await NestFactory.create<NestApplication>(AppModule);
 
   const configService = app.get(ConfigService);
-
   const port = configService.get<number>('app.port') ?? 3000;
 
   app.useGlobalPipes(
