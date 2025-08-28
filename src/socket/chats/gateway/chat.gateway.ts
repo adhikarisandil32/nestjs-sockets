@@ -1,13 +1,15 @@
 import {
   ConnectedSocket,
+  MessageBody,
   OnGatewayConnection,
   OnGatewayDisconnect,
+  SubscribeMessage,
   WebSocketGateway,
   WebSocketServer,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 
-@WebSocketGateway({ namespace: 'api/chat' })
+@WebSocketGateway({ cors: true, namespace: 'socket/chat' })
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   server: Server;
@@ -31,10 +33,23 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   showConnectedClients() {
-    // this.server.emit('connections', {
-    //   users: Array.from(this.connectedUsers),
-    //   count: this.connectedUsersCount,
-    // });
+    this.server.emit('connections', {
+      users: Array.from(this.connectedUsers),
+      count: this.connectedUsersCount,
+    });
+  }
+
+  @SubscribeMessage('message')
+  handleMessageEvent(
+    @ConnectedSocket() socket: Socket,
+    @MessageBody() message: string,
+  ) {
+    console.log(socket.handshake);
+
+    this.server.emit('message', {
+      clientId: socket.id,
+      message,
+    });
   }
 
   createRoom(socket: Socket, data: string) {
