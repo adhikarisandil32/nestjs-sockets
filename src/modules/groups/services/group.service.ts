@@ -38,7 +38,18 @@ export class GroupsService {
       .from(TableNames.UsersGroupsLinkerTable, 'ug')
       .leftJoinAndSelect(TableNames.UsersTable, 'u', 'u.id = ug.user_id')
       .leftJoinAndSelect(TableNames.GroupsTable, 'g', 'g.id = ug.group_id')
-      .select(['g.id group_id', 'g.name group_name', 'u.*'])
+      .select([
+        'g.id group_id',
+        'g.name group_name',
+        'u.id id',
+        'u.name name',
+        'u.email email',
+        'u.role role',
+        'u.is_active is_active',
+        'u.created_at created_at',
+        'u.updated_at updated_at',
+        'u.deleted_at deleted_at',
+      ])
       .where('ug.group_id = :groupId', { groupId });
 
     const groupMembers = await groupMembersQuery.getRawMany();
