@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { DatabaseModule } from './database/database.module';
 import { ConfigModule } from './configs/config.module';
-import { LoggerModule } from 'nestjs-pino';
+import { LoggerModule as PinoLoggerModule } from 'nestjs-pino';
 import { ResponseModule } from './response/response.module';
 // import { HealthModule } from './health/health.module';
 
@@ -10,7 +10,7 @@ import { ResponseModule } from './response/response.module';
     ConfigModule,
     DatabaseModule,
     ResponseModule,
-    LoggerModule.forRoot({
+    PinoLoggerModule.forRoot({
       pinoHttp: {
         transport: {
           target: 'pino-pretty',
