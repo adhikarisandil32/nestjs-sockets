@@ -20,7 +20,6 @@ async function bootstrap() {
       transform: true,
     }),
   );
-  app.setGlobalPrefix('api');
 
   if (configService.get<string>('app.mode') === APP_MODE.DEV) {
     // to monitor the nestapp's process memory
