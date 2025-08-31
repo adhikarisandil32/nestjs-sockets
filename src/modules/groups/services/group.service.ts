@@ -1,6 +1,6 @@
 import { InjectRepository } from '@nestjs/typeorm';
 import { GroupEntity } from '../entities/group.entity';
-import { DataSource, In, Not, Repository, Table } from 'typeorm';
+import { DataSource, In, Repository } from 'typeorm';
 import { CreateGroupDto } from '../dtos/create.group.dto';
 import { UserEntity } from 'src/modules/users/entities/user.entity';
 import { TableNames } from 'src/common/database/constants/common.constant';
