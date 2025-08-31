@@ -1,11 +1,16 @@
 import { UsersService } from 'src/modules/users/services/users.service';
 import { DataSource } from 'typeorm';
 import { LoginAuthDto } from '../dtos/login.auth.dto';
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 import { ConfigService } from '@nestjs/config';
 import { UserEntity } from 'src/modules/users/entities/user.entity';
+import { USER_ROLE } from 'src/modules/users/constants/user.constant';
 
 @Injectable()
 export class AuthService {
@@ -39,7 +44,6 @@ export class AuthService {
     }
 
     return {
-      user: existingUser,
       accessToken: this._jwtService.sign(
         { id: existingUser.id, role: existingUser.role },
         { secret: this.secretKey },
@@ -47,7 +51,13 @@ export class AuthService {
     };
   }
 
-  async getMe(user: UserEntity) {
-    return user;
+  async getMe(user: { id: number; role: USER_ROLE }): Promise<UserEntity> {
+    const userInDb = await this._usersService.findOneById(user.id);
+
+    if (!userInDb) {
+      throw new UnauthorizedException('no token available');
+    }
+
+    return userInDb;
   }
 }
