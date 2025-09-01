@@ -107,8 +107,7 @@ export class ChatGateway
     const socketUser: UserEntity = socket.handshake['user'];
 
     return this.server.emit('message', {
-      socketId: socket.id,
-      userName: socketUser.name,
+      senderName: socketUser.name,
       message,
     });
   }
