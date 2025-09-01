@@ -1,4 +1,3 @@
-import { UseGuards } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import {
@@ -17,6 +16,10 @@ import { USER_ROLE } from 'src/modules/users/constants/user.constant';
 import { UserEntity } from 'src/modules/users/entities/user.entity';
 import { UsersService } from 'src/modules/users/services/users.service';
 // import { WsJwtAuthGuard } from 'src/modules/auth/guards/ws-auth.guard';
+
+interface AuthenticatedSocket extends Socket {
+  handshake: Socket['handshake'] & { user: UserEntity };
+}
 
 @WebSocketGateway({ cors: true, namespace: 'socket/chat' })
 // @UseGuards(WsJwtAuthGuard)
@@ -41,7 +44,7 @@ export class ChatGateway
   }
 
   afterInit(server: Server) {
-    server.use(async (socket, next) => {
+    server.use(async (socket: AuthenticatedSocket, next) => {
       try {
         const token = socket.handshake.headers.authorization?.split(' ')[1];
 
@@ -64,7 +67,7 @@ export class ChatGateway
           throw new WsException('user not available');
         }
 
-        socket.handshake['user'] = associatedUser;
+        socket.handshake.user = associatedUser;
 
         next();
       } catch (error) {
@@ -74,18 +77,18 @@ export class ChatGateway
     });
   }
 
-  handleConnection(@ConnectedSocket() client: Socket) {
-    const socketUser: UserEntity = client.handshake['user'];
+  handleConnection(@ConnectedSocket() client: AuthenticatedSocket) {
+    const socketUser: UserEntity = client.handshake.user;
 
     this.connectedUsers.add(socketUser.email);
     this.connectedUsersCount++;
     this.showConnectedClients();
   }
 
-  handleDisconnect(@ConnectedSocket() client: Socket) {
+  handleDisconnect(@ConnectedSocket() client: AuthenticatedSocket) {
     client.disconnect();
 
-    const socketUser: UserEntity = client.handshake['user'];
+    const socketUser: UserEntity = client.handshake.user;
 
     this.connectedUsers.delete(socketUser.email);
     this.connectedUsersCount--;
@@ -101,10 +104,10 @@ export class ChatGateway
 
   @SubscribeMessage('message')
   handleMessageEvent(
-    @ConnectedSocket() socket: Socket,
+    @ConnectedSocket() socket: AuthenticatedSocket,
     @MessageBody() message: string,
   ) {
-    const socketUser: UserEntity = socket.handshake['user'];
+    const socketUser: UserEntity = socket.handshake.user;
 
     return this.server.emit('message', {
       senderName: socketUser.name,
@@ -112,7 +115,7 @@ export class ChatGateway
     });
   }
 
-  createRoom(socket: Socket, data: string) {
+  createRoom(socket: AuthenticatedSocket, data: string) {
     socket.join('aRoom');
     socket.to('aRoom').emit('roomCreated', { room: 'aRoom' });
     return { event: 'roomCreated', room: 'aRoom' };
