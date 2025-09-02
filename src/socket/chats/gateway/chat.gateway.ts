@@ -15,13 +15,17 @@ import { Server, Socket } from 'socket.io';
 import { USER_ROLE } from 'src/modules/users/constants/user.constant';
 import { UserEntity } from 'src/modules/users/entities/user.entity';
 import { UsersService } from 'src/modules/users/services/users.service';
+import {
+  SocketEvents,
+  SocketNamespaces,
+} from 'src/socket/constants/socket.constants';
 // import { WsJwtAuthGuard } from 'src/modules/auth/guards/ws-auth.guard';
 
 interface AuthenticatedSocket extends Socket {
-  handshake: Socket['handshake'] & { user: UserEntity };
+  handshake: Socket['handshake'] & { __user: UserEntity };
 }
 
-@WebSocketGateway({ cors: true, namespace: 'socket/chat' })
+@WebSocketGateway({ cors: true, namespace: SocketNamespaces.Chat })
 // @UseGuards(WsJwtAuthGuard)
 export class ChatGateway
   implements OnGatewayConnection, OnGatewayDisconnect, OnGatewayInit
@@ -67,7 +71,7 @@ export class ChatGateway
           throw new WsException('user not available');
         }
 
-        socket.handshake.user = associatedUser;
+        socket.handshake.__user = associatedUser;
 
         next();
       } catch (error) {
@@ -78,7 +82,7 @@ export class ChatGateway
   }
 
   handleConnection(@ConnectedSocket() client: AuthenticatedSocket) {
-    const socketUser: UserEntity = client.handshake.user;
+    const socketUser: UserEntity = client.handshake.__user;
 
     this.connectedUsers.add(socketUser.email);
     this.connectedUsersCount++;
@@ -88,7 +92,7 @@ export class ChatGateway
   handleDisconnect(@ConnectedSocket() client: AuthenticatedSocket) {
     client.disconnect();
 
-    const socketUser: UserEntity = client.handshake.user;
+    const socketUser: UserEntity = client.handshake.__user;
 
     this.connectedUsers.delete(socketUser.email);
     this.connectedUsersCount--;
@@ -96,22 +100,26 @@ export class ChatGateway
   }
 
   showConnectedClients() {
-    this.server.emit('connections', {
+    this.server.emit(SocketEvents.Connections, {
       users: Array.from(this.connectedUsers),
       count: this.connectedUsersCount,
     });
   }
 
   @SubscribeMessage('message')
-  handleMessageEvent(
+  async handleMessageEvent(
     @ConnectedSocket() socket: AuthenticatedSocket,
     @MessageBody() message: string,
   ) {
-    const socketUser: UserEntity = socket.handshake.user;
+    const trimmedMessage = message?.trim();
 
-    return this.server.emit('message', {
+    if (!trimmedMessage) return;
+
+    const socketUser: UserEntity = socket.handshake.__user;
+
+    return this.server.emit(SocketEvents.Message, {
       senderName: socketUser.name,
-      message,
+      message: trimmedMessage,
     });
   }
 
