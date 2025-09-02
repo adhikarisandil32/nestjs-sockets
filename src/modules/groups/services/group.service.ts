@@ -13,22 +13,28 @@ export class GroupsService {
   ) {}
 
   async create(createGroupDto: CreateGroupDto) {
-    const existingUsers = await this._dataSource
+    const usersForGroup = await this._dataSource
       .getRepository(UserEntity)
       .find({
-        where: createGroupDto.ids.map((userId) => ({
-          id: userId,
+        where: createGroupDto.memberIds.map((memberId) => ({
+          id: memberId,
         })),
       });
 
-    if (existingUsers.length <= 0) {
-      return [];
+    if (usersForGroup.length <= 0) {
+      return {};
     }
 
-    const groupMembers = this._groupRepo.create(existingUsers);
-    await this._groupRepo.save(groupMembers);
+    const preparedGroupRepoData = this._groupRepo.create({
+      name: createGroupDto.name,
+      groupAdmin: {
+        id: createGroupDto.groupAdminId,
+      },
+      users: usersForGroup,
+    });
+    await this._groupRepo.save(preparedGroupRepoData);
 
-    return groupMembers;
+    return preparedGroupRepoData;
   }
 
   async getGroupMembers(groupId: number) {
