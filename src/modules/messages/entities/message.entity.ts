@@ -20,7 +20,7 @@ export class MessageEntity extends DBBaseEntity {
 
   @ManyToOne(() => GroupEntity, (group) => group.id, { nullable: false })
   @JoinColumn({ name: 'group_id' })
-  groupId: GroupEntity;
+  group: GroupEntity;
 
   @ManyToOne(() => UserEntity, (user) => user.id, { nullable: false })
   @JoinColumn({ name: 'sender_id' })
