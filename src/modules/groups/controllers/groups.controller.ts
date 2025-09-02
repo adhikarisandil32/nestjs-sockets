@@ -22,13 +22,16 @@ export class GroupsController {
     @Param('id') groupId: number,
     @Body() updateGroupDto: AddMmbersDto,
   ) {
-    if (updateGroupDto.ids == null || updateGroupDto.ids.length <= 0) {
+    if (
+      updateGroupDto.memberIds == null ||
+      updateGroupDto.memberIds.length <= 0
+    ) {
       return;
     }
 
     return await this._groupService.addMembers({
       groupId,
-      newMemberIds: updateGroupDto.ids,
+      newMemberIds: updateGroupDto.memberIds,
     });
   }
 
@@ -37,13 +40,16 @@ export class GroupsController {
     @Param('id') groupId: number,
     @Body() removeMembersDto: RemoveMembersDto,
   ) {
-    if (removeMembersDto.ids == null || removeMembersDto.ids.length <= 0) {
+    if (
+      removeMembersDto.memberIds == null ||
+      removeMembersDto.memberIds.length <= 0
+    ) {
       return;
     }
 
     return await this._groupService.removeMembers({
       groupId,
-      memberIds: removeMembersDto.ids,
+      memberIds: removeMembersDto.memberIds,
     });
   }
 }

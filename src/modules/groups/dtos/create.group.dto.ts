@@ -11,8 +11,12 @@ export class CreateGroupDto {
   @IsOptional()
   name: 'my group';
 
+  @IsInt()
+  @IsPositive()
+  groupAdminId: number;
+
   @IsArray()
   @IsInt({ each: true })
   @IsPositive({ each: true })
-  ids: number[];
+  memberIds: number[];
 }
