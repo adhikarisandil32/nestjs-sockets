@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { Observable } from 'rxjs';
-import { USER_ROLE } from 'src/modules/users/constants/user.constant';
+import { IJwtUser } from '../interfaces/jwt.interface';
 
 @Injectable()
 export class JwtAuthGuard extends AuthGuard('jwt') {
@@ -16,11 +16,7 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
     return super.canActivate(context);
   }
 
-  handleRequest(
-    err: Error,
-    user: { id: number; role: USER_ROLE },
-    info: Error,
-  ): any {
+  handleRequest(err: Error, user: IJwtUser, info: Error): any {
     try {
       if (err || !user || !user?.id || !user?.role) {
         throw new UnauthorizedException({

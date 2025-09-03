@@ -10,7 +10,7 @@ import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 import { ConfigService } from '@nestjs/config';
 import { UserEntity } from 'src/modules/users/entities/user.entity';
-import { USER_ROLE } from 'src/modules/users/constants/user.constant';
+import { IJwtUser } from '../interfaces/jwt.interface';
 
 @Injectable()
 export class AuthService {
@@ -51,7 +51,7 @@ export class AuthService {
     };
   }
 
-  async getMe(user: { id: number; role: USER_ROLE }): Promise<UserEntity> {
+  async getMe(user: IJwtUser): Promise<UserEntity> {
     const userInDb = await this._usersService.findOneById(user.id);
 
     if (!userInDb) {

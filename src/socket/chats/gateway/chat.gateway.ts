@@ -12,6 +12,7 @@ import {
   WsException,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
+import { IJwtUser } from 'src/modules/auth/interfaces/jwt.interface';
 import { USER_ROLE } from 'src/modules/users/constants/user.constant';
 import { UserEntity } from 'src/modules/users/entities/user.entity';
 import { UsersService } from 'src/modules/users/services/users.service';
@@ -56,10 +57,7 @@ export class ChatGateway
           throw new WsException('no authorization token');
         }
 
-        const decodedToken = this.jwtService.verify<{
-          id: number;
-          role: USER_ROLE;
-        }>(token, {
+        const decodedToken = this.jwtService.verify<IJwtUser>(token, {
           secret: this.jwtSecret,
         });
 
@@ -106,7 +104,7 @@ export class ChatGateway
     });
   }
 
-  @SubscribeMessage('message')
+  @SubscribeMessage(SocketEvents.Message)
   async handleMessageEvent(
     @ConnectedSocket() socket: AuthenticatedSocket,
     @MessageBody() message: string,
@@ -117,10 +115,12 @@ export class ChatGateway
 
     const socketUser: UserEntity = socket.handshake.__user;
 
-    return this.server.emit(SocketEvents.Message, {
+    this.server.emit(SocketEvents.Message, {
       senderName: socketUser.name,
       message: trimmedMessage,
     });
+
+    return;
   }
 
   createRoom(socket: AuthenticatedSocket, data: string) {
