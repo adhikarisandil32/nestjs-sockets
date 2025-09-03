@@ -12,7 +12,11 @@ export class UsersService {
   ) {}
 
   async getAllUsers() {
-    return await this.userRepo.find({});
+    return await this.userRepo.find({
+      where: {
+        isActive: true,
+      },
+    });
   }
 
   async findOneById(id: number) {
