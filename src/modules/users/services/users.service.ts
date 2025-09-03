@@ -19,6 +19,7 @@ export class UsersService {
     return await this.userRepo.findOne({
       where: {
         id,
+        isActive: true,
       },
     });
   }
