@@ -4,11 +4,13 @@ import { DataSource, In, Repository } from 'typeorm';
 import { CreateGroupDto } from '../dtos/create.group.dto';
 import { UserEntity } from 'src/modules/users/entities/user.entity';
 import { TableNames } from 'src/common/database/constants/common.constant';
+import { UsersGroupsService } from 'src/modules/users-groups/services/users-groups.service';
 
 export class GroupsService {
   constructor(
     @InjectRepository(GroupEntity)
     private readonly _groupRepo: Repository<GroupEntity>,
+    private readonly _userGroupService: UsersGroupsService,
     private readonly _dataSource: DataSource,
   ) {}
 
@@ -25,16 +27,16 @@ export class GroupsService {
       return {};
     }
 
-    const preparedGroupRepoData = this._groupRepo.create({
+    const preparedUserGroupData = this._groupRepo.create({
       name: createGroupDto.name,
       groupAdmin: {
         id: createGroupDto.groupAdminId,
       },
-      users: usersForGroup,
     });
-    await this._groupRepo.save(preparedGroupRepoData);
 
-    return preparedGroupRepoData;
+    await this._userGroupService.create(preparedUserGroupData);
+
+    return preparedUserGroupData;
   }
 
   async getGroupMembers(groupId: number) {
