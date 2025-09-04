@@ -4,13 +4,13 @@ import { DataSource, In, Repository } from 'typeorm';
 import { CreateGroupDto } from '../dtos/create.group.dto';
 import { UserEntity } from 'src/modules/users/entities/user.entity';
 import { TableNames } from 'src/common/database/constants/common.constant';
-import { UsersGroupsService } from 'src/modules/users-groups/services/users-groups.service';
+import { UserGroupEntity } from 'src/modules/users-groups/entities/users-groups.entity';
+import { BadRequestException } from '@nestjs/common';
 
 export class GroupsService {
   constructor(
     @InjectRepository(GroupEntity)
     private readonly _groupRepo: Repository<GroupEntity>,
-    private readonly _userGroupService: UsersGroupsService,
     private readonly _dataSource: DataSource,
   ) {}
 
@@ -23,20 +23,64 @@ export class GroupsService {
         })),
       });
 
+    const adminForGroup = await this._dataSource
+      .getRepository(UserEntity)
+      .findOne({
+        where: {
+          id: createGroupDto.groupAdminId,
+        },
+      });
+
+    if (!adminForGroup) {
+      throw new BadRequestException('no group admin data');
+    }
+
     if (usersForGroup.length <= 0) {
       return {};
     }
 
-    const preparedUserGroupData = this._groupRepo.create({
-      name: createGroupDto.name,
-      groupAdmin: {
-        id: createGroupDto.groupAdminId,
-      },
-    });
+    const queryRunner = this._dataSource.createQueryRunner();
+    try {
+      await queryRunner.connect();
+      await queryRunner.startTransaction();
 
-    await this._userGroupService.create(preparedUserGroupData);
+      const qrEntityManager = queryRunner.manager;
 
-    return preparedUserGroupData;
+      const preparedGroupCreateData = qrEntityManager.create(GroupEntity, {
+        name: createGroupDto.name,
+        groupAdmin: adminForGroup,
+      });
+
+      await qrEntityManager.save(preparedGroupCreateData);
+
+      const preparedGroupsUsersCreateData = qrEntityManager.create(
+        UserGroupEntity,
+        usersForGroup.map((user) => ({
+          group: {
+            id: preparedGroupCreateData.id,
+          },
+          member: user,
+        })),
+      );
+
+      await qrEntityManager.save(preparedGroupsUsersCreateData);
+
+      await queryRunner.commitTransaction();
+
+      return {
+        ...preparedGroupCreateData,
+        members: usersForGroup.map((user) => ({
+          id: user.id,
+          email: user.email,
+          isActive: user.isActive,
+        })),
+      };
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      throw error;
+    } finally {
+      await queryRunner.release();
+    }
   }
 
   async getGroupMembers(groupId: number) {
