@@ -1,6 +1,6 @@
 export enum TableNames {
   GroupsTable = 'groups',
   UsersTable = 'users',
-  UsersGroupsLinkerTable = 'groups_users',
+  UsersGroupsLinkerTable = 'users_groups',
   MessagesTable = 'messages',
 }
