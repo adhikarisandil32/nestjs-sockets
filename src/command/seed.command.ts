@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Command } from 'nestjs-command';
 import { DataSource } from 'typeorm';
-import { seedUsers, seedGroups } from './seed-helper';
+import { seedUsers, seedGroups, seedGroupsUsers } from './seed-helper';
 import { UserEntity } from 'src/modules/users/entities/user.entity';
 import { GroupEntity } from 'src/modules/groups/entities/group.entity';
 
@@ -17,13 +17,12 @@ export class SeedDatabase {
     await queryRunner.startTransaction();
 
     try {
-      console.log('seeding begins');
+      const usersRepository = queryRunner.manager.getRepository(UserEntity);
+      const groupsRepository = queryRunner.manager.getRepository(GroupEntity);
 
-      await seedUsers(queryRunner.manager.getRepository(UserEntity));
-      await seedGroups(
-        queryRunner.manager.getRepository(UserEntity),
-        queryRunner.manager.getRepository(GroupEntity),
-      );
+      await seedUsers(usersRepository);
+      await seedGroups(usersRepository, groupsRepository);
+      await seedGroupsUsers(usersRepository, groupsRepository);
 
       console.log('seeding success');
       await queryRunner.commitTransaction();

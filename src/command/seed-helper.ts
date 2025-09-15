@@ -45,7 +45,7 @@ export async function seedUsers(usersRepository: Repository<UserEntity>) {
         password: 'Test@123',
         name: faker.person.fullName(),
         role: USER_ROLE.USER,
-        isActive: Boolean(Math.round(Math.random())),
+        isActive: true,
       }),
     );
 
@@ -96,9 +96,61 @@ export async function seedGroups(
       },
       () => ({
         groupAdmin,
-        users: groupMembers,
+        members: groupMembers,
       }),
     );
+
+    const newGroups = groupsRepository.create(groups);
+    await groupsRepository.save(newGroups);
+
+    console.log('groups seed success');
+  } catch (error) {
+    throw new Error(error);
+  }
+}
+
+/*********************************
+ ** This is users_groups seeder **
+ *********************************/
+export async function seedGroupsUsers(
+  usersRepository: Repository<UserEntity>,
+  groupsRepository: Repository<GroupEntity>,
+) {
+  try {
+    const groupAdmin = await usersRepository.findOne({
+      where: {
+        id: In(Array.from({ length: 100 }, (_, idx) => idx + 1)),
+      },
+    });
+    const groupMembers = await usersRepository.find({
+      take: 4,
+    });
+
+    if (
+      !groupAdmin ||
+      !groupMembers ||
+      (groupMembers && groupMembers.length < 2)
+    ) {
+      throw new Error('seed users first');
+    }
+
+    const existingGroups = await groupsRepository.find({});
+
+    if (existingGroups.length >= 3) {
+      return;
+    }
+
+    const groups: Pick<GroupEntity, 'name' | 'groupAdmin' | 'members'>[] =
+      Array.from(
+        {
+          length: 3 - existingGroups.length,
+        },
+        () => ({
+          groupAdmin,
+          name: 'my group',
+          members: groupMembers,
+        }),
+      );
 
     const newGroups = groupsRepository.create(groups);
     await groupsRepository.save(newGroups);
