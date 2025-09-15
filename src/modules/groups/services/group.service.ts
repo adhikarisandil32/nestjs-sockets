@@ -3,6 +3,9 @@ import { GroupEntity } from '../entities/group.entity';
 import { DataSource, In, Repository } from 'typeorm';
 import { CreateGroupDto } from '../dtos/create.group.dto';
 import { UserEntity } from 'src/modules/users/entities/user.entity';
+import { TableNames } from 'src/common/database/constants/common.constant';
+import { UserGroupEntity } from 'src/modules/users-groups/entities/users-groups.entity';
+import { BadRequestException } from '@nestjs/common';
 
 export class GroupsService {
   constructor(
@@ -12,20 +15,99 @@ export class GroupsService {
   ) {}
 
   async create(createGroupDto: CreateGroupDto) {
-    const existingUsers = await this._dataSource
+    const usersForGroup = await this._dataSource
       .getRepository(UserEntity)
       .find({
-        where: createGroupDto.ids.map((userId) => ({
-          id: userId,
+        where: createGroupDto.memberIds.map((memberId) => ({
+          id: memberId,
         })),
       });
 
-    if (existingUsers.length <= 0) {
-      return [];
+    const adminForGroup = await this._dataSource
+      .getRepository(UserEntity)
+      .findOne({
+        where: {
+          id: createGroupDto.groupAdminId,
+        },
+      });
+
+    if (!adminForGroup) {
+      throw new BadRequestException('no group admin data');
     }
 
-    const groupMembers = this._groupRepo.create(existingUsers);
-    await this._groupRepo.save(groupMembers);
+    if (usersForGroup.length <= 0) {
+      return {};
+    }
+
+    const queryRunner = this._dataSource.createQueryRunner();
+    try {
+      await queryRunner.connect();
+      await queryRunner.startTransaction();
+
+      const qrEntityManager = queryRunner.manager;
+
+      const preparedGroupCreateData = qrEntityManager.create(GroupEntity, {
+        name: createGroupDto.name,
+        groupAdmin: adminForGroup,
+      });
+
+      await qrEntityManager.save(preparedGroupCreateData);
+
+      const preparedGroupsUsersCreateData = qrEntityManager.create(
+        UserGroupEntity,
+        usersForGroup.map((user) => ({
+          group: {
+            id: preparedGroupCreateData.id,
+          },
+          member: user,
+        })),
+      );
+
+      await qrEntityManager.save(preparedGroupsUsersCreateData);
+
+      await queryRunner.commitTransaction();
+
+      return {
+        ...preparedGroupCreateData,
+        members: usersForGroup.map((user) => ({
+          id: user.id,
+          email: user.email,
+          isActive: user.isActive,
+        })),
+      };
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      throw error;
+    } finally {
+      await queryRunner.release();
+    }
+  }
+
+  async getGroupMembers(groupId: number) {
+    const queryBuilder = this._dataSource.createQueryBuilder();
+
+    const groupMembersQuery = queryBuilder
+      .from(TableNames.UsersGroupsLinkerTable, 'ug')
+      .leftJoinAndSelect(TableNames.UsersTable, 'u', 'u.id = ug.user_id')
+      .leftJoinAndSelect(TableNames.GroupsTable, 'g', 'g.id = ug.group_id')
+      .select([
+        'g.id group_id',
+        'g.name group_name',
+        'u.id id',
+        'u.name name',
+        'u.email email',
+        'u.role role',
+        'u.is_active is_active',
+        'u.created_at created_at',
+        'u.updated_at updated_at',
+        'u.deleted_at deleted_at',
+      ])
+      .where('ug.group_id = :groupId', { groupId });
+
+    const groupMembers = await groupMembersQuery.getRawMany();
+
+    // console.log(groupMembersQuery.getQueryAndParameters());
+    // console.log(groupMembers);
 
     return groupMembers;
   }
@@ -41,18 +123,16 @@ export class GroupsService {
       where: {
         id: In(newMemberIds),
       },
+      select: {
+        id: true,
+      },
     });
 
     const queryBuilder = this._dataSource.createQueryBuilder();
 
-    // await queryBuilder
-    //   .relation(GroupEntity, 'users')
-    //   .of(groupId)
-    //   .add(newMembers);
-
     await queryBuilder
       .insert()
-      .into('groups_users')
+      .into(TableNames.UsersGroupsLinkerTable)
       .values(
         newMembers.map((member) => ({
           group_id: groupId,
@@ -61,21 +141,24 @@ export class GroupsService {
       )
       .orIgnore()
       .execute();
+
+    return;
   }
 
-  async removeMember({
+  async removeMembers({
     groupId,
-    memberId,
+    memberIds,
   }: {
     groupId: number;
-    memberId: number;
+    memberIds: number[];
   }) {
-    const member = await this._dataSource.getRepository(UserEntity).findOne({
-      where: {
-        id: memberId,
-      },
-    });
+    const queryBuilder = this._dataSource.createQueryBuilder();
 
-    const queryBuilder = this._groupRepo.createQueryBuilder();
+    await queryBuilder
+      .relation(TableNames.GroupsTable, TableNames.UsersTable)
+      .of(groupId)
+      .remove(memberIds);
+
+    return;
   }
 }

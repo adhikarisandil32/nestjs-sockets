@@ -1,18 +1,22 @@
 import {
   IsArray,
   IsInt,
-  IsNotEmpty,
+  IsOptional,
   IsPositive,
   IsString,
 } from 'class-validator';
 
 export class CreateGroupDto {
   @IsString()
-  @IsNotEmpty()
+  @IsOptional()
   name: 'my group';
+
+  @IsInt()
+  @IsPositive()
+  groupAdminId: number;
 
   @IsArray()
   @IsInt({ each: true })
   @IsPositive({ each: true })
-  ids: number[];
+  memberIds: number[];
 }

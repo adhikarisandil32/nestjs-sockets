@@ -1,34 +1,20 @@
+import { TableNames } from 'src/common/database/constants/common.constant';
 import { DBBaseEntity } from 'src/common/database/entities/base.entity';
+import { UserGroupEntity } from 'src/modules/users-groups/entities/users-groups.entity';
 import { UserEntity } from 'src/modules/users/entities/user.entity';
-import {
-  Column,
-  Entity,
-  JoinColumn,
-  JoinTable,
-  ManyToMany,
-  ManyToOne,
-} from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
 
-@Entity({ name: 'groups' })
+@Entity({ name: TableNames.GroupsTable })
 export class GroupEntity extends DBBaseEntity {
-  @Column({ name: 'name', nullable: false, default: 'my group' })
+  @Column({ name: 'name', default: 'my group' })
   name: string;
 
   @ManyToOne(() => UserEntity, (user) => user.id, { nullable: false })
   @JoinColumn({ name: 'group_admin' })
   groupAdmin: UserEntity;
 
-  @ManyToMany(() => UserEntity, (user) => user.id, { nullable: false })
-  @JoinTable({
-    name: 'groups_users',
-    joinColumn: {
-      name: 'group_id',
-      referencedColumnName: 'id',
-    },
-    inverseJoinColumn: {
-      name: 'user_id',
-      referencedColumnName: 'id',
-    },
+  @OneToMany(() => UserGroupEntity, (userGroup) => userGroup.group, {
+    nullable: false,
   })
-  users: UserEntity[];
+  members: UserGroupEntity[];
 }

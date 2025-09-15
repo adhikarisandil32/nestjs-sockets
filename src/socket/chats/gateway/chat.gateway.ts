@@ -1,44 +1,129 @@
+import { ConfigService } from '@nestjs/config';
+import { JwtService } from '@nestjs/jwt';
 import {
   ConnectedSocket,
+  MessageBody,
   OnGatewayConnection,
   OnGatewayDisconnect,
+  OnGatewayInit,
+  SubscribeMessage,
   WebSocketGateway,
   WebSocketServer,
-  WsResponse,
+  WsException,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
+import { IJwtUser } from 'src/modules/auth/interfaces/jwt.interface';
+import { USER_ROLE } from 'src/modules/users/constants/user.constant';
+import { UserEntity } from 'src/modules/users/entities/user.entity';
+import { UsersService } from 'src/modules/users/services/users.service';
+import {
+  SocketEvents,
+  SocketNamespaces,
+} from 'src/socket/constants/socket.constants';
+// import { WsJwtAuthGuard } from 'src/modules/auth/guards/ws-auth.guard';
 
-@WebSocketGateway({ namespace: 'chat' })
-export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
+interface AuthenticatedSocket extends Socket {
+  handshake: Socket['handshake'] & { __user: UserEntity };
+}
+
+@WebSocketGateway({ cors: true, namespace: SocketNamespaces.Chat })
+// @UseGuards(WsJwtAuthGuard)
+export class ChatGateway
+  implements OnGatewayConnection, OnGatewayDisconnect, OnGatewayInit
+{
   @WebSocketServer()
   server: Server;
 
-  private connectedUsers: Set<string> = new Set();
-  private connectedUsersCount: number = 0;
+  private jwtSecret: string;
+  private connectedUsers: Set<string>;
+  private connectedUsersCount: number;
 
-  handleConnection(@ConnectedSocket() client: Socket) {
-    console.log(`client ${client.id} connected`);
-    this.connectedUsers.add(client.id);
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly jwtService: JwtService,
+    private readonly _usersService: UsersService,
+  ) {
+    this.connectedUsers = new Set();
+    this.connectedUsersCount = 0;
+    this.jwtSecret = configService.get<string>('jwt.secretKey')!;
+  }
+
+  afterInit(server: Server) {
+    server.use(async (socket: AuthenticatedSocket, next) => {
+      try {
+        const token = socket.handshake.headers.authorization?.split(' ')[1];
+
+        if (!token) {
+          throw new WsException('no authorization token');
+        }
+
+        const decodedToken = this.jwtService.verify<IJwtUser>(token, {
+          secret: this.jwtSecret,
+        });
+
+        const associatedUser = await this._usersService.findOneById(
+          decodedToken.id,
+        );
+
+        if (!associatedUser) {
+          throw new WsException('user not available');
+        }
+
+        socket.handshake.__user = associatedUser;
+
+        next();
+      } catch (error) {
+        socket.disconnect();
+        next(error);
+      }
+    });
+  }
+
+  handleConnection(@ConnectedSocket() client: AuthenticatedSocket) {
+    const socketUser: UserEntity = client.handshake.__user;
+
+    this.connectedUsers.add(socketUser.email);
     this.connectedUsersCount++;
     this.showConnectedClients();
   }
 
-  handleDisconnect(@ConnectedSocket() client: Socket) {
-    console.log(`client ${client.id} disconnected`);
+  handleDisconnect(@ConnectedSocket() client: AuthenticatedSocket) {
     client.disconnect();
-    this.connectedUsers.delete(client.id);
+
+    const socketUser: UserEntity = client.handshake.__user;
+
+    this.connectedUsers.delete(socketUser.email);
     this.connectedUsersCount--;
     this.showConnectedClients();
   }
 
   showConnectedClients() {
-    // this.server.emit('connections', {
-    //   users: Array.from(this.connectedUsers),
-    //   count: this.connectedUsersCount,
-    // });
+    this.server.emit(SocketEvents.Connections, {
+      users: Array.from(this.connectedUsers),
+      count: this.connectedUsersCount,
+    });
   }
 
-  createRoom(socket: Socket, data: string) {
+  @SubscribeMessage(SocketEvents.Message)
+  async handleMessageEvent(
+    @ConnectedSocket() socket: AuthenticatedSocket,
+    @MessageBody() message: string,
+  ) {
+    const trimmedMessage = message?.trim();
+
+    if (!trimmedMessage) return;
+
+    const socketUser: UserEntity = socket.handshake.__user;
+
+    this.server.emit(SocketEvents.Message, {
+      senderName: socketUser.name,
+      message: trimmedMessage,
+    });
+
+    return;
+  }
+
+  createRoom(socket: AuthenticatedSocket, data: string) {
     socket.join('aRoom');
     socket.to('aRoom').emit('roomCreated', { room: 'aRoom' });
     return { event: 'roomCreated', room: 'aRoom' };

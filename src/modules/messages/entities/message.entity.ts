@@ -3,8 +3,9 @@ import { GroupEntity } from 'src/modules/groups/entities/group.entity';
 import { UserEntity } from 'src/modules/users/entities/user.entity';
 import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
 import { MESSAGE_STATUS } from '../constants/message.constant';
+import { TableNames } from 'src/common/database/constants/common.constant';
 
-@Entity({ name: 'messages' })
+@Entity({ name: TableNames.MessagesTable })
 export class MessageEntity extends DBBaseEntity {
   @Column({ name: 'message', nullable: false })
   message: string;
@@ -19,7 +20,7 @@ export class MessageEntity extends DBBaseEntity {
 
   @ManyToOne(() => GroupEntity, (group) => group.id, { nullable: false })
   @JoinColumn({ name: 'group_id' })
-  groupId: GroupEntity;
+  group: GroupEntity;
 
   @ManyToOne(() => UserEntity, (user) => user.id, { nullable: false })
   @JoinColumn({ name: 'sender_id' })
