@@ -3,6 +3,7 @@ import { UserEntity } from 'src/modules/users/entities/user.entity';
 import { In, Repository } from 'typeorm';
 import { faker } from '@faker-js/faker';
 import { GroupEntity } from 'src/modules/groups/entities/group.entity';
+import { UserGroupEntity } from 'src/modules/users-groups/entities/users-groups.entity';
 
 /**************************
  ** This is users seeder **
@@ -90,7 +91,7 @@ export async function seedGroups(
       return;
     }
 
-    const groups = Array.from(
+    const newGroups = Array.from(
       {
         length: 3 - existingGroups.length,
       },
@@ -100,8 +101,8 @@ export async function seedGroups(
       }),
     );
 
-    const newGroups = groupsRepository.create(groups);
-    await groupsRepository.save(newGroups);
+    const createdGroups = groupsRepository.create(newGroups);
+    await groupsRepository.save(createdGroups);
 
     console.log('groups seed success');
   } catch (error) {
@@ -115,47 +116,40 @@ export async function seedGroups(
 export async function seedGroupsUsers(
   usersRepository: Repository<UserEntity>,
   groupsRepository: Repository<GroupEntity>,
+  usersGroupsRepository: Repository<UserGroupEntity>,
 ) {
   try {
-    const groupAdmin = await usersRepository.findOne({
-      where: {
-        id: In(Array.from({ length: 100 }, (_, idx) => idx + 1)),
-      },
-    });
-    const groupMembers = await usersRepository.find({
-      take: 4,
-    });
+    const usersGroupsData = await usersGroupsRepository.find({ take: 1 });
 
-    if (
-      !groupAdmin ||
-      !groupMembers ||
-      (groupMembers && groupMembers.length < 2)
-    ) {
-      throw new Error('seed users first');
-    }
-
-    const existingGroups = await groupsRepository.find({});
-
-    if (existingGroups.length >= 3) {
+    if (usersGroupsData && usersGroupsData.length >= 1) {
+      console.log('users_groups seed success');
       return;
     }
 
-    const groups: Pick<GroupEntity, 'name' | 'groupAdmin' | 'members'>[] =
-      Array.from(
-        {
-          length: 3 - existingGroups.length,
-        },
-        () => ({
-          groupAdmin,
-          name: 'my group',
-          members: groupMembers,
-        }),
-      );
+    const lengthOfGroups = 3,
+      lengthOfMembers = 3;
+    const prepatedData: Pick<UserGroupEntity, 'group' | 'member'>[] = [];
 
-    const newGroups = groupsRepository.create(groups);
-    await groupsRepository.save(newGroups);
+    const [groups, members] = await Promise.all([
+      groupsRepository.find({
+        take: lengthOfGroups,
+      }),
+      usersRepository.find({ take: lengthOfMembers }),
+    ]);
 
-    console.log('groups seed success');
+    for (let i = 0; i < lengthOfGroups; i++) {
+      for (let j = 0; j < lengthOfMembers; j++) {
+        prepatedData.push({
+          group: groups[i],
+          member: members[j],
+        });
+      }
+    }
+
+    const createdData = usersGroupsRepository.create(prepatedData);
+    await usersGroupsRepository.save(createdData);
+
+    console.log('users_groups seed success');
   } catch (error) {
     throw new Error(error);
   }
