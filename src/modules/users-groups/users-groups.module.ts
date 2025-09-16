@@ -1,14 +1,17 @@
 import { Module } from '@nestjs/common';
 import { UsersModule } from '../users/users.module';
 import { GroupsModule } from '../groups/group.module';
-import { GroupsService } from '../groups/services/group.service';
-import { UsersService } from '../users/services/users.service';
 import { UsersGroupsService } from './services/users-groups.service';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { UserGroupEntity } from './entities/users-groups.entity';
 
 @Module({
-  imports: [UsersModule, GroupsModule],
-  controllers: [],
-  providers: [UsersService, GroupsService, UsersGroupsService],
+  imports: [
+    UsersModule,
+    GroupsModule,
+    TypeOrmModule.forFeature([UserGroupEntity]),
+  ],
+  providers: [UsersGroupsService],
   exports: [UsersGroupsService],
 })
 export class UsersGroupsModule {}

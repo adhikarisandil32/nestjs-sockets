@@ -13,7 +13,8 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { IJwtUser } from 'src/modules/auth/interfaces/jwt.interface';
-import { USER_ROLE } from 'src/modules/users/constants/user.constant';
+import { MessageService } from 'src/modules/messages/services/message.service';
+import { UsersGroupsService } from 'src/modules/users-groups/services/users-groups.service';
 import { UserEntity } from 'src/modules/users/entities/user.entity';
 import { UsersService } from 'src/modules/users/services/users.service';
 import {
@@ -42,6 +43,8 @@ export class ChatGateway
     private readonly configService: ConfigService,
     private readonly jwtService: JwtService,
     private readonly _usersService: UsersService,
+    private readonly messageService: MessageService,
+    private readonly userGroupService: UsersGroupsService,
   ) {
     this.connectedUsers = new Set();
     this.connectedUsersCount = 0;
@@ -107,13 +110,36 @@ export class ChatGateway
   @SubscribeMessage(SocketEvents.Message)
   async handleMessageEvent(
     @ConnectedSocket() socket: AuthenticatedSocket,
-    @MessageBody() message: string,
+    @MessageBody()
+    message: {
+      text: string;
+      groupId: number;
+    },
   ) {
-    const trimmedMessage = message?.trim();
+    const trimmedMessage = message.text?.trim();
 
-    if (!trimmedMessage) return;
+    if (!trimmedMessage || !message.groupId) {
+      throw new WsException('invalid message format');
+    }
 
     const socketUser: UserEntity = socket.handshake.__user;
+
+    const userInGroup = await this.userGroupService.checkUserInGroup({
+      groupId: message.groupId,
+      memberId: socketUser.id,
+    });
+
+    // console.log({ userInGroup, socketUser });
+
+    if (!userInGroup) {
+      throw new WsException("user doesn't belong to group");
+    }
+
+    await this.messageService.create({
+      message: message.text,
+      senderId: socketUser.id,
+      groupId: message.groupId,
+    });
 
     this.server.emit(SocketEvents.Message, {
       senderName: socketUser.name,

@@ -12,7 +12,7 @@ export class MessageService {
     private readonly messageRepo: Repository<MessageEntity>,
   ) {}
 
-  async createMessage(createMessageDto: CreateMessageDto) {
+  async create(createMessageDto: CreateMessageDto) {
     const preparedMessage = this.messageRepo.create({
       message: createMessageDto.message,
       sender: {

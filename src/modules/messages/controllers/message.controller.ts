@@ -8,6 +8,6 @@ export class MessageController {
 
   @Post('create')
   async createMessage(createMessageDto: CreateMessageDto) {
-    await this.messageService.createMessage(createMessageDto);
+    await this.messageService.create(createMessageDto);
   }
 }
