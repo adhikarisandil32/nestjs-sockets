@@ -1,3 +1,4 @@
+import { UseFilters } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import {
@@ -12,6 +13,7 @@ import {
   WsException,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
+import { ErrorService } from 'src/common/error/error.service';
 import { IJwtUser } from 'src/modules/auth/interfaces/jwt.interface';
 import { MessageService } from 'src/modules/messages/services/message.service';
 import { UsersGroupsService } from 'src/modules/users-groups/services/users-groups.service';
@@ -27,6 +29,7 @@ interface AuthenticatedSocket extends Socket {
   handshake: Socket['handshake'] & { __user: UserEntity };
 }
 
+@UseFilters(new ErrorService())
 @WebSocketGateway({ cors: true, namespace: SocketNamespaces.Chat })
 // @UseGuards(WsJwtAuthGuard)
 export class ChatGateway
@@ -129,10 +132,9 @@ export class ChatGateway
       memberId: socketUser.id,
     });
 
-    // console.log({ userInGroup, socketUser });
-
     if (!userInGroup) {
-      throw new WsException("user doesn't belong to group");
+      const errorMessage = "user doesn't belong to group";
+      throw new WsException(errorMessage);
     }
 
     await this.messageService.create({
