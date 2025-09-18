@@ -27,6 +27,29 @@ export class UsersService {
     });
   }
 
+  async findGroups(userId: number) {
+    const userGroups = await this.userRepo.findOne({
+      where: {
+        id: userId,
+      },
+      relations: {
+        groups: {
+          group: true,
+        },
+      },
+      select: {
+        groups: {
+          group: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+    });
+
+    return userGroups;
+  }
+
   async findOneByEmail({ email }: { email: string }) {
     return await this.userRepo.findOne({ where: { email } });
   }
