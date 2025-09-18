@@ -1,4 +1,5 @@
 export interface IMessage {
-  groupId: number;
-  message: string;
+  text: string;
+  groupId: number | undefined;
+  receiverUserId: number | undefined;
 }
