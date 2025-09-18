@@ -23,6 +23,7 @@ export class ErrorService
 
     try {
       if (exception instanceof HttpException) {
+        console.log(exception);
         const status = exception.getStatus();
         const exceptionResponse = exception.getResponse();
 
@@ -52,6 +53,16 @@ export class ErrorService
         const client = ctx.getClient<Socket>();
 
         const errorMessage = exception.message;
+
+        console.log(
+          {
+            message: errorMessage || 'request failed',
+            success: false,
+            date: Date.now(),
+          },
+          '\n',
+          exception,
+        );
 
         client.emit(SocketEvents.Error, errorMessage);
 
