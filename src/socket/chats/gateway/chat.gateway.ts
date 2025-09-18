@@ -15,7 +15,7 @@ import {
 import { Server, Socket } from 'socket.io';
 import { ErrorService } from 'src/common/error/error.service';
 import { IJwtUser } from 'src/modules/auth/interfaces/jwt.interface';
-import { MessageService } from 'src/modules/messages/services/message.service';
+import { ConversationService } from 'src/modules/conversations/services/conversation.service';
 import { UsersGroupsService } from 'src/modules/users-groups/services/users-groups.service';
 import { UserEntity } from 'src/modules/users/entities/user.entity';
 import { UsersService } from 'src/modules/users/services/users.service';
@@ -23,6 +23,7 @@ import {
   SocketEvents,
   SocketNamespaces,
 } from 'src/socket/constants/socket.constants';
+import { IMessage } from '../interfaces/chat.interface';
 // import { WsJwtAuthGuard } from 'src/modules/auth/guards/ws-auth.guard';
 
 interface AuthenticatedSocket extends Socket {
@@ -46,12 +47,12 @@ export class ChatGateway
     private readonly configService: ConfigService,
     private readonly jwtService: JwtService,
     private readonly _usersService: UsersService,
-    private readonly messageService: MessageService,
+    private readonly conversationService: ConversationService,
     private readonly userGroupService: UsersGroupsService,
   ) {
     this.connectedUsers = new Set();
     this.connectedUsersCount = 0;
-    this.jwtSecret = configService.get<string>('jwt.secretKey')!;
+    this.jwtSecret = this.configService.get<string>('jwt.secretKey')!;
   }
 
   afterInit(server: Server) {
@@ -114,39 +115,56 @@ export class ChatGateway
   async handleMessageEvent(
     @ConnectedSocket() socket: AuthenticatedSocket,
     @MessageBody()
-    message: {
-      text: string;
-      groupId: number;
-    },
+    message: IMessage,
   ) {
     const trimmedMessage = message.text?.trim();
 
-    if (!trimmedMessage || !message.groupId) {
+    if (!trimmedMessage || !(message.groupId && message.receiverUserId)) {
       throw new WsException('invalid message format');
     }
 
     const socketUser: UserEntity = socket.handshake.__user;
 
-    const userInGroup = await this.userGroupService.checkUserInGroup({
-      groupId: message.groupId,
-      memberId: socketUser.id,
-    });
+    if (message.groupId) {
+      const userInGroup = await this.userGroupService.checkUserInGroup({
+        groupId: message.groupId,
+        memberId: socketUser.id,
+      });
 
-    if (!userInGroup) {
-      const errorMessage = "user doesn't belong to group";
-      throw new WsException(errorMessage);
+      if (!userInGroup) {
+        const errorMessage = "user doesn't belong to group";
+        throw new WsException(errorMessage);
+      }
+
+      await this.conversationService.createGroupConvo({
+        message: message.text,
+        senderId: socketUser.id,
+        groupId: message.groupId,
+      });
     }
 
-    await this.messageService.create({
-      message: message.text,
-      senderId: socketUser.id,
-      groupId: message.groupId,
-    });
+    if (message.receiverUserId) {
+      const userInGroup = await this.userGroupService.checkUserInGroup({
+        groupId: message.groupId,
+        memberId: socketUser.id,
+      });
 
-    this.server.emit(SocketEvents.Message, {
-      senderName: socketUser.name,
-      message: trimmedMessage,
-    });
+      if (!userInGroup) {
+        const errorMessage = "user doesn't belong to group";
+        throw new WsException(errorMessage);
+      }
+
+      await this.conversationService.createSingleConvo({
+        message: message.text,
+        senderId: socketUser.id,
+        receiverId: message.receiverUserId,
+      });
+
+      this.server.emit(SocketEvents.Message, {
+        senderName: socketUser.name,
+        message: trimmedMessage,
+      });
+    }
 
     return;
   }
