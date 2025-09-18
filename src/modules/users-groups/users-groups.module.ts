@@ -7,9 +7,9 @@ import { UserGroupEntity } from './entities/users-groups.entity';
 
 @Module({
   imports: [
+    TypeOrmModule.forFeature([UserGroupEntity]),
     UsersModule,
     GroupsModule,
-    TypeOrmModule.forFeature([UserGroupEntity]),
   ],
   providers: [UsersGroupsService],
   exports: [UsersGroupsService],
