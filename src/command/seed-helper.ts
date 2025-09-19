@@ -50,7 +50,27 @@ export async function seedUsers(usersRepository: Repository<UserEntity>) {
       }),
     );
 
-    const otherUsers = usersRepository.create(otherUsersArray);
+    const moreUsers = [
+      {
+        email: 'sandil1@gmail.com',
+        password: 'Test@123',
+        name: 'Sandil1 Adhikari',
+        role: USER_ROLE.USER,
+        isActive: true,
+      },
+      {
+        email: 'sandil2@gmail.com',
+        password: 'Test@123',
+        name: 'Sandil2 Adhikari',
+        role: USER_ROLE.USER,
+        isActive: true,
+      },
+    ];
+
+    const otherUsers = usersRepository.create([
+      ...moreUsers,
+      ...otherUsersArray,
+    ]);
 
     await usersRepository.save(otherUsers);
     console.log('users seed success');
