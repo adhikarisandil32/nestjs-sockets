@@ -73,6 +73,17 @@ export class ConversationService {
       order: {
         createdAt: 'DESC',
       },
+      select: {
+        sender: {
+          id: true,
+          name: true,
+          email: true,
+          role: true,
+        },
+      },
+      relations: {
+        sender: true,
+      },
     });
   }
 }
