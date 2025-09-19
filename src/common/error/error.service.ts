@@ -9,6 +9,7 @@ import { BaseWsExceptionFilter, WsException } from '@nestjs/websockets';
 import { Request, Response } from 'express';
 import { Socket } from 'socket.io';
 import { SocketEvents } from 'src/socket/constants/socket.constants';
+import { QueryFailedError } from 'typeorm';
 
 @Catch()
 export class ErrorService
@@ -36,6 +37,23 @@ export class ErrorService
         if (typeof exceptionResponse === 'string') {
           errorMessage = exceptionResponse;
         }
+
+        httpResponse.status(status).json({
+          message: errorMessage || 'Request Failed',
+          status,
+          success: status < 400,
+          date: Date.now(),
+          path: httpRequest.url,
+        });
+
+        return;
+      }
+
+      if (exception instanceof QueryFailedError) {
+        console.log(exception);
+        const status = 500;
+
+        let errorMessage: string | undefined = undefined;
 
         httpResponse.status(status).json({
           message: errorMessage || 'Request Failed',
