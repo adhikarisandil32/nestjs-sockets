@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { MESSAGE_STATUS } from '../constants/conversation.constant';
 import { SingleConversationEntity } from '../entities/single.conversation.entity';
 import { GroupConversationEntity } from '../entities/group.conversation.entity';
@@ -47,5 +47,32 @@ export class ConversationService {
     });
 
     await this.groupConvoRepo.save(preparedMessage);
+  }
+
+  async getSingleConvos({
+    userIds,
+  }: {
+    userIds: {
+      senderId: number;
+      receiverId: number;
+    };
+  }) {
+    return await this.singleConvRepo.find({
+      where: [
+        {
+          sender: { id: userIds.senderId },
+          receiver: { id: userIds.receiverId },
+          status: MESSAGE_STATUS.SENT,
+        },
+        {
+          sender: { id: userIds.receiverId },
+          receiver: { id: userIds.senderId },
+          status: MESSAGE_STATUS.SENT,
+        },
+      ],
+      order: {
+        createdAt: 'DESC',
+      },
+    });
   }
 }
