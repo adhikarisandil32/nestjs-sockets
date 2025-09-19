@@ -24,6 +24,7 @@ import {
   SocketNamespaces,
 } from 'src/socket/constants/socket.constants';
 import { IMessage } from '../interfaces/chat.interface';
+import { ChatRoomDto } from '../dtos/chat-room.dto';
 // import { WsJwtAuthGuard } from 'src/modules/auth/guards/ws-auth.guard';
 
 interface AuthenticatedSocket extends Socket {
@@ -46,7 +47,7 @@ export class ChatGateway
   constructor(
     private readonly configService: ConfigService,
     private readonly jwtService: JwtService,
-    private readonly _usersService: UsersService,
+    private readonly usersService: UsersService,
     private readonly conversationService: ConversationService,
     private readonly userGroupService: UsersGroupsService,
   ) {
@@ -68,7 +69,7 @@ export class ChatGateway
           secret: this.jwtSecret,
         });
 
-        const associatedUser = await this._usersService.findOneById(
+        const associatedUser = await this.usersService.findOneById(
           decodedToken.id,
         );
 
@@ -145,7 +146,7 @@ export class ChatGateway
       }
 
       await this.conversationService.createGroupConvo({
-        message: message.text,
+        message: trimmedMessage,
         senderId: socketUser.id,
         groupId: message.groupId,
       });
@@ -159,7 +160,7 @@ export class ChatGateway
     // for single conversation
     if (message.receiverUserId) {
       await this.conversationService.createSingleConvo({
-        message: message.text,
+        message: trimmedMessage,
         senderId: socketUser.id,
         receiverId: message.receiverUserId,
       });
@@ -170,12 +171,16 @@ export class ChatGateway
       });
     }
 
+    console.log({ socketRooms: Array.from(socket.rooms) });
+
     return;
   }
 
-  createRoom(socket: AuthenticatedSocket, data: string) {
-    socket.join('aRoom');
-    socket.to('aRoom').emit('roomCreated', { room: 'aRoom' });
+  @SubscribeMessage(SocketEvents.CreateRoom)
+  createRoom(socket: AuthenticatedSocket, chatRoomDto: ChatRoomDto) {
+    console.log(chatRoomDto);
+    // socket.join('aRoom');
+    // socket.to('aRoom').emit('roomCreated', { room: 'aRoom' });
     return { event: 'roomCreated', room: 'aRoom' };
   }
 }
