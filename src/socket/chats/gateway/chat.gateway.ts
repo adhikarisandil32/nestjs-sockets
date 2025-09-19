@@ -13,7 +13,7 @@ import {
   WsException,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { ErrorService } from 'src/common/error/error.service';
+import { WsErrorService } from 'src/common/error/error.service';
 import { IJwtUser } from 'src/modules/auth/interfaces/jwt.interface';
 import { ConversationService } from 'src/modules/conversations/services/conversation.service';
 import { UsersGroupsService } from 'src/modules/users-groups/services/users-groups.service';
@@ -31,7 +31,7 @@ interface AuthenticatedSocket extends Socket {
   handshake: Socket['handshake'] & { __user: UserEntity };
 }
 
-@UseFilters(new ErrorService())
+@UseFilters(new WsErrorService())
 @WebSocketGateway({ cors: true, namespace: SocketNamespaces.Chat })
 // @UseGuards(WsJwtAuthGuard)
 export class ChatGateway
