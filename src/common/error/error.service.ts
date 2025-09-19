@@ -11,11 +11,8 @@ import { Socket } from 'socket.io';
 import { SocketEvents } from 'src/socket/constants/socket.constants';
 import { QueryFailedError } from 'typeorm';
 
-@Catch()
-export class ErrorService
-  extends BaseWsExceptionFilter
-  implements ExceptionFilter
-{
+@Catch(HttpException)
+export class HTTPErrorService implements ExceptionFilter {
   catch(exception: any, host: ArgumentsHost) {
     const httpCtx = host.switchToHttp();
 
@@ -23,12 +20,12 @@ export class ErrorService
     const httpRequest = httpCtx.getRequest<Request>();
 
     try {
-      if (exception instanceof HttpException) {
-        console.log(exception);
-        const status = exception.getStatus();
-        const exceptionResponse = exception.getResponse();
+      let errorMessage: string | undefined = undefined;
+      let status: number | undefined = HttpStatus.INTERNAL_SERVER_ERROR;
 
-        let errorMessage: string | undefined = undefined;
+      if (exception instanceof HttpException) {
+        status = exception.getStatus();
+        const exceptionResponse = exception.getResponse();
 
         if (typeof exceptionResponse === 'object') {
           errorMessage = exception.message;
@@ -37,57 +34,23 @@ export class ErrorService
         if (typeof exceptionResponse === 'string') {
           errorMessage = exceptionResponse;
         }
-
-        httpResponse.status(status).json({
-          message: errorMessage || 'Request Failed',
-          status,
-          success: status < 400,
-          date: Date.now(),
-          path: httpRequest.url,
-        });
-
-        return;
       }
 
       if (exception instanceof QueryFailedError) {
-        console.log(exception);
-        const status = 500;
-
-        let errorMessage: string | undefined = undefined;
-
-        httpResponse.status(status).json({
-          message: errorMessage || 'Request Failed',
-          status,
-          success: status < 400,
-          date: Date.now(),
-          path: httpRequest.url,
-        });
-
-        return;
+        status = HttpStatus.INTERNAL_SERVER_ERROR;
+        errorMessage = 'Request Failed';
       }
 
-      if (exception instanceof WsException) {
-        const ctx = host.switchToWs();
-        const client = ctx.getClient<Socket>();
+      httpResponse.status(status).json({
+        message: errorMessage || 'Request Failed',
+        status,
+        success: false,
+        date: Date.now(),
+        path: httpRequest.url,
+      });
 
-        const errorMessage = exception.message;
-
-        console.log(
-          {
-            message: errorMessage || 'request failed',
-            success: false,
-            date: Date.now(),
-          },
-          '\n',
-          exception,
-        );
-
-        client.emit(SocketEvents.Error, errorMessage);
-
-        return;
-      }
-
-      throw exception;
+      console.log(exception);
+      return;
     } catch (error) {
       console.log(error);
       const message = exception?.message || 'Internal Server Error';
@@ -100,8 +63,25 @@ export class ErrorService
         date: Date.now(),
         path: httpRequest.url,
       });
-
-      return;
     }
+
+    return;
+  }
+}
+
+@Catch(WsException)
+export class WsErrorService extends BaseWsExceptionFilter {
+  catch(exception: any, host: ArgumentsHost): void {
+    if (exception instanceof WsException) {
+      const ctx = host.switchToWs();
+      const client = ctx.getClient<Socket>();
+
+      const errorMessage = exception.message ?? 'Request Failed';
+
+      client.emit(SocketEvents.Error, errorMessage);
+    }
+    console.log(exception);
+
+    return;
   }
 }
