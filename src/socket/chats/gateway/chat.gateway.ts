@@ -119,12 +119,20 @@ export class ChatGateway
   ) {
     const trimmedMessage = message.text?.trim();
 
-    if (!trimmedMessage || !(message.groupId && message.receiverUserId)) {
+    if (!trimmedMessage) {
+      throw new WsException('invalid message format');
+    }
+
+    if (
+      (!message.groupId && !message.receiverUserId) ||
+      (message.groupId && message.receiverUserId)
+    ) {
       throw new WsException('invalid message format');
     }
 
     const socketUser: UserEntity = socket.handshake.__user;
 
+    // for group conversation
     if (message.groupId) {
       const userInGroup = await this.userGroupService.checkUserInGroup({
         groupId: message.groupId,
@@ -141,19 +149,15 @@ export class ChatGateway
         senderId: socketUser.id,
         groupId: message.groupId,
       });
+
+      this.server.emit(SocketEvents.Message, {
+        senderName: socketUser.name,
+        message: trimmedMessage,
+      });
     }
 
+    // for single conversation
     if (message.receiverUserId) {
-      const userInGroup = await this.userGroupService.checkUserInGroup({
-        groupId: message.groupId,
-        memberId: socketUser.id,
-      });
-
-      if (!userInGroup) {
-        const errorMessage = "user doesn't belong to group";
-        throw new WsException(errorMessage);
-      }
-
       await this.conversationService.createSingleConvo({
         message: message.text,
         senderId: socketUser.id,
