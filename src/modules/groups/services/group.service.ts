@@ -14,7 +14,7 @@ export class GroupsService {
     private readonly _dataSource: DataSource,
   ) {}
 
-  async create(createGroupDto: CreateGroupDto) {
+  async create(groupAdmin: UserEntity, createGroupDto: CreateGroupDto) {
     const usersForGroup = await this._dataSource
       .getRepository(UserEntity)
       .find({
@@ -23,15 +23,7 @@ export class GroupsService {
         })),
       });
 
-    const adminForGroup = await this._dataSource
-      .getRepository(UserEntity)
-      .findOne({
-        where: {
-          id: createGroupDto.groupAdminId,
-        },
-      });
-
-    if (!adminForGroup) {
+    if (!groupAdmin) {
       throw new BadRequestException('no group admin data');
     }
 
@@ -48,19 +40,22 @@ export class GroupsService {
 
       const preparedGroupCreateData = qrEntityManager.create(GroupEntity, {
         name: createGroupDto.name,
-        groupAdmin: adminForGroup,
+        groupAdmin,
       });
 
       await qrEntityManager.save(preparedGroupCreateData);
 
       const preparedGroupsUsersCreateData = qrEntityManager.create(
         UserGroupEntity,
-        usersForGroup.map((user) => ({
-          group: {
-            id: preparedGroupCreateData.id,
-          },
-          member: user,
-        })),
+        [
+          ...usersForGroup.map((user) => ({
+            group: {
+              id: preparedGroupCreateData.id,
+            },
+            member: user,
+          })),
+          groupAdmin,
+        ],
       );
 
       await qrEntityManager.save(preparedGroupsUsersCreateData);
