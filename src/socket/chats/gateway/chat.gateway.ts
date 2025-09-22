@@ -178,9 +178,10 @@ export class ChatGateway
 
   @SubscribeMessage(SocketEvents.CreateRoom)
   createRoom(socket: AuthenticatedSocket, chatRoomDto: ChatRoomDto) {
-    console.log(chatRoomDto);
-    // socket.join('aRoom');
-    // socket.to('aRoom').emit('roomCreated', { room: 'aRoom' });
+    // console.log(chatRoomDto);
+    // console.log(socket.rooms, socket.id);
+    console.log(this.server.adapter?.['rooms']);
+
     return { event: 'roomCreated', room: 'aRoom' };
   }
 }
