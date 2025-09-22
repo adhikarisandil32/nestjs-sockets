@@ -72,16 +72,25 @@ export class HTTPErrorService implements ExceptionFilter {
 @Catch(WsException)
 export class WsErrorService extends BaseWsExceptionFilter {
   catch(exception: any, host: ArgumentsHost): void {
-    if (exception instanceof WsException) {
-      const ctx = host.switchToWs();
-      const client = ctx.getClient<Socket>();
+    const ctx = host.switchToWs();
+    const client = ctx.getClient<Socket>();
 
-      const errorMessage = exception.message ?? 'Request Failed';
+    let errorMessage: string | undefined = 'Request Failed';
+
+    try {
+      if (exception instanceof WsException) {
+        errorMessage = exception.message ?? 'Request Failed';
+      }
+
+      console.log(exception);
+      client.emit(SocketEvents.Error, errorMessage);
+      return;
+    } catch (error) {
+      console.log(error);
+      errorMessage = error?.message || 'Request Execution Failed';
 
       client.emit(SocketEvents.Error, errorMessage);
+      return;
     }
-    console.log(exception);
-
-    return;
   }
 }
