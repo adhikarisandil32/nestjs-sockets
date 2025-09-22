@@ -1,5 +1,4 @@
 import { UsersService } from 'src/modules/users/services/users.service';
-import { DataSource } from 'typeorm';
 import { LoginAuthDto } from '../dtos/login.auth.dto';
 import {
   Injectable,
@@ -18,7 +17,6 @@ export class AuthService {
 
   constructor(
     private readonly _usersService: UsersService,
-    private readonly _dataSource: DataSource,
     private readonly _jwtService: JwtService,
     private readonly _configService: ConfigService,
   ) {

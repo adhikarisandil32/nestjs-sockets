@@ -1,4 +1,4 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, Param } from '@nestjs/common';
 import { UserProtected } from 'src/modules/auth/decorators/auth-guard.decorator';
 import { UsersService } from '../services/users.service';
 
@@ -10,5 +10,11 @@ export class UsersController {
   @Get('all')
   async getAllUsers() {
     return await this.usersService.getAllUsers();
+  }
+
+  @UserProtected()
+  @Get(':id/groups')
+  async getGroups(@Param('id') userId: number) {
+    return await this.usersService.findGroups(userId);
   }
 }

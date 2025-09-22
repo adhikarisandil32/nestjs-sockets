@@ -1,6 +1,6 @@
 import { InjectRepository } from '@nestjs/typeorm';
 import { UserEntity } from '../entities/user.entity';
-import { DataSource, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { Injectable } from '@nestjs/common';
 
 @Injectable()
@@ -8,7 +8,6 @@ export class UsersService {
   constructor(
     @InjectRepository(UserEntity)
     private readonly userRepo: Repository<UserEntity>,
-    private readonly _dataSource: DataSource,
   ) {}
 
   async getAllUsers() {
@@ -26,6 +25,29 @@ export class UsersService {
         isActive: true,
       },
     });
+  }
+
+  async findGroups(userId: number) {
+    const userGroups = await this.userRepo.findOne({
+      where: {
+        id: userId,
+      },
+      relations: {
+        groups: {
+          group: true,
+        },
+      },
+      select: {
+        groups: {
+          group: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+    });
+
+    return userGroups;
   }
 
   async findOneByEmail({ email }: { email: string }) {
