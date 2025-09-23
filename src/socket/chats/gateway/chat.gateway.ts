@@ -100,7 +100,10 @@ export class ChatGateway
 
     const socketUser: UserEntity = client.handshake.__user;
 
-    this.connectedUsers.delete(socketUser.email);
+    this.connectedUsers.delete({
+      email: socketUser.email,
+      socketInfo: client,
+    });
     this.connectedUsersCount--;
     this.showConnectedClients();
   }
