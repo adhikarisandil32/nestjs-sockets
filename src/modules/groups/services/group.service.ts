@@ -48,13 +48,18 @@ export class GroupsService {
       const preparedGroupsUsersCreateData = qrEntityManager.create(
         UserGroupEntity,
         [
+          {
+            group: {
+              id: preparedGroupCreateData.id,
+            },
+            member: groupAdmin,
+          },
           ...usersForGroup.map((user) => ({
             group: {
               id: preparedGroupCreateData.id,
             },
             member: user,
           })),
-          groupAdmin,
         ],
       );
 
