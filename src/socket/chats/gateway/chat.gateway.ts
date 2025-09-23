@@ -31,6 +31,11 @@ interface AuthenticatedSocket extends Socket {
   handshake: Socket['handshake'] & { __user: UserEntity };
 }
 
+interface IConnectedUser {
+  email: string;
+  socketInfo: Socket;
+}
+
 @UseFilters(new WsErrorService())
 @WebSocketGateway({ cors: true, namespace: SocketNamespaces.Chat })
 // @UseGuards(WsJwtAuthGuard)
