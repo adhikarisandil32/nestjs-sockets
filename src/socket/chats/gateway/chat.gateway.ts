@@ -50,6 +50,7 @@ export class ChatGateway
     private readonly usersService: UsersService,
     private readonly conversationService: ConversationService,
     private readonly userGroupService: UsersGroupsService,
+    private readonly groupService: GroupsService,
   ) {
     this.connectedUsers = new Set();
     this.connectedUsersCount = 0;
@@ -90,7 +91,7 @@ export class ChatGateway
   handleConnection(@ConnectedSocket() client: AuthenticatedSocket) {
     const socketUser: UserEntity = client.handshake.__user;
 
-    this.connectedUsers.add(socketUser.email);
+    this.connectedUsers.add({ email: socketUser.email, socketInfo: client });
     this.connectedUsersCount++;
     this.showConnectedClients();
   }
