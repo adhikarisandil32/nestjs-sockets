@@ -1,6 +1,6 @@
 import { InjectRepository } from '@nestjs/typeorm';
 import { UserEntity } from '../entities/user.entity';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { Injectable } from '@nestjs/common';
 
 @Injectable()
@@ -14,6 +14,14 @@ export class UsersService {
     return await this.userRepo.find({
       where: {
         isActive: true,
+      },
+    });
+  }
+
+  async getUsersByIds(userIds: number[]) {
+    return await this.userRepo.find({
+      where: {
+        id: In(userIds),
       },
     });
   }
