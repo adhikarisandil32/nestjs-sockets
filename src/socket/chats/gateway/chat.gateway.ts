@@ -25,6 +25,7 @@ import {
 } from 'src/socket/constants/socket.constants';
 import { IMessage } from '../interfaces/chat.interface';
 import { ChatRoomDto } from '../dtos/chat-room.dto';
+import { GroupsService } from 'src/modules/groups/services/group.service';
 // import { WsJwtAuthGuard } from 'src/modules/auth/guards/ws-auth.guard';
 
 interface AuthenticatedSocket extends Socket {
@@ -46,7 +47,7 @@ export class ChatGateway
   server: Server;
 
   private jwtSecret: string;
-  private connectedUsers: Set<string>;
+  private connectedUsers: Set<IConnectedUser>;
   private connectedUsersCount: number;
 
   constructor(
