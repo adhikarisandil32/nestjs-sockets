@@ -177,11 +177,35 @@ export class ChatGateway
   }
 
   @SubscribeMessage(SocketEvents.CreateRoom)
-  createRoom(socket: AuthenticatedSocket, chatRoomDto: ChatRoomDto) {
+  async createRoom(socket: AuthenticatedSocket, chatRoomDto: ChatRoomDto) {
     // console.log(chatRoomDto);
     // console.log(socket.rooms, socket.id);
-    console.log(this.server.adapter?.['rooms']);
+    // console.log(this.server.adapter?.['rooms']);
 
-    return { event: 'roomCreated', room: 'aRoom' };
+    const socketUser = socket.handshake.__user;
+
+    const members = await this.usersService.getUsersByIds(chatRoomDto.userIds);
+
+    const memberSocketsInfo = Array.from(this.connectedUsers)
+      .filter((user) => members.filter((member) => member.email === user.email))
+      .map((user) => user.socketInfo);
+
+    const createdGroup = await this.groupService.create(socketUser, {
+      name: chatRoomDto.name,
+      memberIds: members.map((member) => member.id),
+    });
+
+    const roomName = `room_${createdGroup.name}_${createdGroup.id}`;
+
+    memberSocketsInfo.forEach((memberSocket) => memberSocket.join(roomName));
+
+    this.server
+      .to(roomName)
+      .emit(
+        SocketEvents.Message,
+        `You have been added to the group '${createdGroup.name}'`,
+      );
+
+    return;
   }
 }
