@@ -107,7 +107,7 @@ export class ChatGateway
 
   showConnectedClients() {
     this.server.emit(SocketEvents.Connections, {
-      users: Array.from(this.connectedUsers),
+      users: Array.from(this.connectedUsers).map((user) => user.email),
       count: this.connectedUsersCount,
     });
   }
@@ -171,7 +171,7 @@ export class ChatGateway
       });
     }
 
-    console.log({ socketRooms: Array.from(socket.rooms) });
+    // console.log({ socketRooms: Array.from(socket.rooms) });
 
     return;
   }
