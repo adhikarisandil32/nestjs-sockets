@@ -28,7 +28,7 @@ export class GroupsService {
     }
 
     if (usersForGroup.length <= 0) {
-      return {};
+      throw new BadRequestException('no member to the group');
     }
 
     const queryRunner = this._dataSource.createQueryRunner();
