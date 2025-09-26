@@ -190,22 +190,32 @@ export class ChatGateway
   async createRoom(socket: AuthenticatedSocket, chatRoomDto: ChatRoomDto) {
     // console.log(chatRoomDto);
     // console.log(socket.rooms, socket.id);
-    // console.log(this.server.adapter?.['rooms']);
 
     const socketUser = socket.handshake.__user;
 
     const members = await this.usersService.getUsersByIds(chatRoomDto.userIds);
 
-    const memberSocketsInfo = Array.from(this.connectedUsers)
-      .filter((user) => members.filter((member) => member.email === user.email))
-      .map((user) => user.socketInfo);
+    // console.log(
+    //   Array.from(this.connectedUsers).filter((user) =>
+    //     members.find((member) => member.email === user.email),
+    //   ),
+    // );
 
-    const createdGroup = await this.groupService.create(socketUser, {
-      name: chatRoomDto.name,
-      memberIds: members.map((member) => member.id),
-    });
+    const memberSocketsInfo = [
+      socket,
+      ...Array.from(this.connectedUsers)
+        .filter((user) => members.find((member) => member.email === user.email))
+        .map((user) => user.socketInfo),
+    ];
 
-    const roomName = `room_${createdGroup.name}_${createdGroup.id}`;
+    // const createdGroup = await this.groupService.create(socketUser, {
+    //   name: chatRoomDto.name,
+    //   memberIds: members.map((member) => member.id),
+    // });
+
+    // const roomName = `room_${createdGroup.name}_${createdGroup.id}`;
+
+    const roomName = `room_${chatRoomDto.name}_`;
 
     memberSocketsInfo.forEach((memberSocket) => memberSocket.join(roomName));
 
@@ -213,8 +223,10 @@ export class ChatGateway
       .to(roomName)
       .emit(
         SocketEvents.Message,
-        `You have been added to the group '${createdGroup.name}'`,
+        `You have been added to the group '${chatRoomDto.name}'`,
       );
+
+    console.log(this.server.adapter?.['rooms']);
 
     return;
   }
