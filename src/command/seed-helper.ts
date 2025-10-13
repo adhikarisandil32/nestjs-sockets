@@ -115,7 +115,8 @@ export async function seedGroups(
       {
         length: 3 - existingGroups.length,
       },
-      () => ({
+      (_, idx) => ({
+        name: `my-group-${idx + 1}`,
         groupAdmin,
         members: groupMembers,
       }),
