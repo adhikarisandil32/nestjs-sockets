@@ -83,6 +83,10 @@ export class GroupsService {
     }
   }
 
+  async getAllGroups() {
+    return await this._groupRepo.find({});
+  }
+
   async getGroupMembers(groupId: number) {
     // const queryBuilder = this._dataSource.createQueryBuilder();
     // const groupMembersQuery = queryBuilder
