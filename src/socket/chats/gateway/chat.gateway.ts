@@ -26,6 +26,7 @@ import {
 import { IMessage } from '../interfaces/chat.interface';
 import { ChatRoomDto } from '../dtos/chat-room.dto';
 import { GroupsService } from 'src/modules/groups/services/group.service';
+import { ChatService } from '../services/chats.service';
 // import { WsJwtAuthGuard } from 'src/modules/auth/guards/ws-auth.guard';
 
 interface AuthenticatedSocket extends Socket {
@@ -57,6 +58,7 @@ export class ChatGateway
     private readonly conversationService: ConversationService,
     private readonly userGroupService: UsersGroupsService,
     private readonly groupService: GroupsService,
+    private readonly chatService: ChatService,
   ) {
     this.connectedUsers = new Set();
     this.connectedUsersCount = 0;
@@ -161,24 +163,46 @@ export class ChatGateway
         groupId: message.groupId,
       });
 
-      this.server.emit(SocketEvents.Message, {
+      this.server.to(`room__${message.groupId}`).emit(SocketEvents.Message, {
         senderName: socketUser.name,
         message: trimmedMessage,
+        groupId: message.groupId,
       });
     }
 
     // for single conversation
     if (message.receiverUserId) {
+      const receiverUserInfo = await this.usersService.findOneById(
+        message.receiverUserId,
+      );
+
+      if (!receiverUserInfo) {
+        const errorMessage = 'user unauthorized';
+        throw new WsException(errorMessage);
+      }
+
+      const receiverUserSocketInfo = Array.from(this.connectedUsers).find(
+        (user) => user.email === receiverUserInfo.email,
+      );
+
+      if (!receiverUserSocketInfo) {
+        const errorMessage = 'user unauthorized';
+        throw new WsException(errorMessage);
+      }
+
       await this.conversationService.createSingleConvo({
         message: trimmedMessage,
         senderId: socketUser.id,
         receiverId: message.receiverUserId,
       });
 
-      this.server.emit(SocketEvents.Message, {
-        senderName: socketUser.name,
-        message: trimmedMessage,
-      });
+      this.server
+        .to(receiverUserSocketInfo.socketInfo.id)
+        .emit(SocketEvents.Message, {
+          senderName: socketUser.name,
+          message: trimmedMessage,
+          receiverId: message.receiverUserId,
+        });
     }
 
     // console.log({ socketRooms: Array.from(socket.rooms) });
@@ -208,14 +232,12 @@ export class ChatGateway
         .map((user) => user.socketInfo),
     ];
 
-    // const createdGroup = await this.groupService.create(socketUser, {
-    //   name: chatRoomDto.name,
-    //   memberIds: members.map((member) => member.id),
-    // });
+    const createdGroup = await this.groupService.create(socketUser, {
+      name: chatRoomDto.name,
+      memberIds: members.map((member) => member.id),
+    });
 
-    // const roomName = `room_${createdGroup.name}_${createdGroup.id}`;
-
-    const roomName = `room_${chatRoomDto.name}_`;
+    const roomName = `room__${createdGroup.id}`;
 
     memberSocketsInfo.forEach((memberSocket) => memberSocket.join(roomName));
 
@@ -226,8 +248,13 @@ export class ChatGateway
         `You have been added to the group '${chatRoomDto.name}'`,
       );
 
-    console.log(this.server.adapter?.['rooms']);
+    // console.log(this.server.adapter?.['rooms']);
 
-    return;
+    return { roomName };
+  }
+
+  @SubscribeMessage('get-rooms')
+  async getRooms() {
+    console.log(this.server.adapter?.['rooms']);
   }
 }
