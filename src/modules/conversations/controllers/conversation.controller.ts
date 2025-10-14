@@ -9,7 +9,7 @@ export class ConversationController {
   constructor(private readonly convoService: ConversationService) {}
 
   @UserProtected()
-  @Get(':receiverId/all')
+  @Get(':receiverId/single-all')
   async getAllSingleConvos(
     @User() user: UserEntity,
     @Param('receiverId') receiverId: number,
@@ -19,6 +19,17 @@ export class ConversationController {
         senderId: user.id,
         receiverId,
       },
+    });
+  }
+
+  @UserProtected()
+  @Get(':groupId/group-all')
+  async getAllGroupConvos(
+    @User() user: UserEntity,
+    @Param('groupId') groupId: number,
+  ) {
+    return await this.convoService.getGroupConvo({
+      groupId,
     });
   }
 }

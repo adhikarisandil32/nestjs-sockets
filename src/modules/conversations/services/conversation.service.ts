@@ -86,4 +86,25 @@ export class ConversationService {
       },
     });
   }
+
+  async getGroupConvo({ groupId }: { groupId: number }) {
+    return await this.groupConvoRepo.find({
+      where: {
+        group: {
+          id: groupId,
+        },
+      },
+      relations: {
+        sender: true,
+      },
+      select: {
+        sender: {
+          id: true,
+          name: true,
+          email: true,
+          role: true,
+        },
+      },
+    });
+  }
 }
