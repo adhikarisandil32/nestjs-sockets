@@ -2,19 +2,32 @@ import { Body, Controller, Get, Param, Patch, Post } from '@nestjs/common';
 import { CreateGroupDto } from '../dtos/create.group.dto';
 import { GroupsService } from '../services/group.service';
 import { AddMmbersDto, RemoveMembersDto } from '../dtos/update.group.dto';
+import { PutUserToRequest } from 'src/modules/auth/guards/put-user.guard';
+import { UserProtected } from 'src/modules/auth/decorators/auth-guard.decorator';
+import { User } from 'src/modules/auth/decorators/param.decorator';
+import { UserEntity } from 'src/modules/users/entities/user.entity';
 
 @Controller('groups')
 export class GroupsController {
   constructor(private readonly _groupService: GroupsService) {}
+
+  @Get('all')
+  async getAllGroups() {
+    return await this._groupService.getAllGroups();
+  }
 
   @Get(':id/members')
   async getGroupById(@Param('id') groupId: number) {
     return await this._groupService.getGroupMembers(groupId);
   }
 
+  @UserProtected()
   @Post('create')
-  async create(@Body() createGroupDto: CreateGroupDto) {
-    return await this._groupService.create(createGroupDto);
+  async create(
+    @User() user: UserEntity,
+    @Body() createGroupDto: CreateGroupDto,
+  ) {
+    return await this._groupService.create(user, createGroupDto);
   }
 
   @Patch(':id/add-members')

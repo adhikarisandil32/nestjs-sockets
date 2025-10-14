@@ -9,11 +9,11 @@ import {
 export class CreateGroupDto {
   @IsString()
   @IsOptional()
-  name: 'my group';
+  name: string = 'my group';
 
-  @IsInt()
-  @IsPositive()
-  groupAdminId: number;
+  // @IsInt()
+  // @IsPositive()
+  // groupAdminId: number;
 
   @IsArray()
   @IsInt({ each: true })

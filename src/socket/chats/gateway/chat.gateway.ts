@@ -25,10 +25,16 @@ import {
 } from 'src/socket/constants/socket.constants';
 import { IMessage } from '../interfaces/chat.interface';
 import { ChatRoomDto } from '../dtos/chat-room.dto';
+import { GroupsService } from 'src/modules/groups/services/group.service';
 // import { WsJwtAuthGuard } from 'src/modules/auth/guards/ws-auth.guard';
 
 interface AuthenticatedSocket extends Socket {
   handshake: Socket['handshake'] & { __user: UserEntity };
+}
+
+interface IConnectedUser {
+  email: string;
+  socketInfo: Socket;
 }
 
 @UseFilters(new WsErrorService())
@@ -41,7 +47,7 @@ export class ChatGateway
   server: Server;
 
   private jwtSecret: string;
-  private connectedUsers: Set<string>;
+  private connectedUsers: Set<IConnectedUser>;
   private connectedUsersCount: number;
 
   constructor(
@@ -50,6 +56,7 @@ export class ChatGateway
     private readonly usersService: UsersService,
     private readonly conversationService: ConversationService,
     private readonly userGroupService: UsersGroupsService,
+    private readonly groupService: GroupsService,
   ) {
     this.connectedUsers = new Set();
     this.connectedUsersCount = 0;
@@ -87,12 +94,16 @@ export class ChatGateway
     });
   }
 
-  handleConnection(@ConnectedSocket() client: AuthenticatedSocket) {
+  async handleConnection(@ConnectedSocket() client: AuthenticatedSocket) {
     const socketUser: UserEntity = client.handshake.__user;
 
-    this.connectedUsers.add(socketUser.email);
+    this.connectedUsers.add({ email: socketUser.email, socketInfo: client });
     this.connectedUsersCount++;
     this.showConnectedClients();
+
+    const groups = await this.usersService.findGroups(socketUser.id);
+
+    groups.forEach((group) => client.join(`room__${group.group.id}`));
   }
 
   handleDisconnect(@ConnectedSocket() client: AuthenticatedSocket) {
@@ -100,14 +111,21 @@ export class ChatGateway
 
     const socketUser: UserEntity = client.handshake.__user;
 
-    this.connectedUsers.delete(socketUser.email);
-    this.connectedUsersCount--;
+    const disconnectedSocketInfo = Array.from(this.connectedUsers).find(
+      (user) => user.email === socketUser.email,
+    );
+
+    if (disconnectedSocketInfo) {
+      this.connectedUsers.delete(disconnectedSocketInfo);
+      this.connectedUsersCount--;
+    }
+
     this.showConnectedClients();
   }
 
   showConnectedClients() {
     this.server.emit(SocketEvents.Connections, {
-      users: Array.from(this.connectedUsers),
+      users: Array.from(this.connectedUsers).map((user) => user.email),
       count: this.connectedUsersCount,
     });
   }
@@ -151,36 +169,92 @@ export class ChatGateway
         groupId: message.groupId,
       });
 
-      this.server.emit(SocketEvents.Message, {
+      this.server.to(`room__${message.groupId}`).emit(SocketEvents.Message, {
         senderName: socketUser.name,
         message: trimmedMessage,
+        groupId: message.groupId,
       });
     }
 
     // for single conversation
     if (message.receiverUserId) {
+      const receiverUserInfo = await this.usersService.findOneById(
+        message.receiverUserId,
+      );
+
+      if (!receiverUserInfo) {
+        const errorMessage = 'user unauthorized';
+        throw new WsException(errorMessage);
+      }
+
+      const receiverUserSocketInfo = Array.from(this.connectedUsers).find(
+        (user) => user.email === receiverUserInfo.email,
+      );
+
       await this.conversationService.createSingleConvo({
         message: trimmedMessage,
         senderId: socketUser.id,
         receiverId: message.receiverUserId,
       });
 
-      this.server.emit(SocketEvents.Message, {
-        senderName: socketUser.name,
-        message: trimmedMessage,
-      });
+      if (!receiverUserSocketInfo) {
+        const errorMessage = 'receiver not available';
+        throw new WsException(errorMessage);
+      }
+
+      this.server
+        .to(receiverUserSocketInfo.socketInfo.id)
+        .emit(SocketEvents.Message, {
+          senderName: socketUser.name,
+          message: trimmedMessage,
+          receiverId: message.receiverUserId,
+        });
     }
 
-    console.log({ socketRooms: Array.from(socket.rooms) });
+    // console.log({ socketRooms: Array.from(socket.rooms) });
 
     return;
   }
 
   @SubscribeMessage(SocketEvents.CreateRoom)
-  createRoom(socket: AuthenticatedSocket, chatRoomDto: ChatRoomDto) {
-    console.log(chatRoomDto);
-    // socket.join('aRoom');
-    // socket.to('aRoom').emit('roomCreated', { room: 'aRoom' });
-    return { event: 'roomCreated', room: 'aRoom' };
+  async createRoom(socket: AuthenticatedSocket, chatRoomDto: ChatRoomDto) {
+    // console.log(chatRoomDto);
+    // console.log(socket.rooms, socket.id);
+
+    const socketUser = socket.handshake.__user;
+
+    const members = await this.usersService.getUsersByIds(chatRoomDto.userIds);
+
+    const memberSocketsInfo = [
+      socket,
+      ...Array.from(this.connectedUsers)
+        .filter((user) => members.find((member) => member.email === user.email))
+        .map((user) => user.socketInfo),
+    ];
+
+    const createdGroup = await this.groupService.create(socketUser, {
+      name: chatRoomDto.name,
+      memberIds: members.map((member) => member.id),
+    });
+
+    const roomName = `room__${createdGroup.id}`;
+
+    memberSocketsInfo.forEach((memberSocket) => memberSocket.join(roomName));
+
+    this.server
+      .to(roomName)
+      .emit(
+        SocketEvents.Message,
+        `You have been added to the group '${chatRoomDto.name}'`,
+      );
+
+    // console.log(this.server.adapter?.['rooms']);
+
+    return { roomName };
+  }
+
+  @SubscribeMessage('get-rooms')
+  async getRooms() {
+    console.log(this.server.adapter?.['rooms']);
   }
 }

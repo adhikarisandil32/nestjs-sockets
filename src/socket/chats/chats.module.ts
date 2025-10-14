@@ -6,9 +6,10 @@ import { ConfigService } from '@nestjs/config';
 import { UsersModule } from 'src/modules/users/users.module';
 import { UsersGroupsModule } from 'src/modules/users-groups/users-groups.module';
 import { ConversationModule } from 'src/modules/conversations/conversation.module';
+import { GroupsModule } from 'src/modules/groups/group.module';
 
 @Module({
-  imports: [UsersModule, ConversationModule, UsersGroupsModule],
+  imports: [UsersModule, ConversationModule, UsersGroupsModule, GroupsModule],
   providers: [ChatGateway, ChatService, JwtService, ConfigService],
 })
 export class ChatModule {}

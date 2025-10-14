@@ -32,4 +32,16 @@ export class UsersGroupsService {
       },
     });
   }
+
+  async getGroupsFromMember(memberId: number) {
+    const groups = await this.userGroupService.find({
+      where: {
+        member: {
+          id: memberId,
+        },
+      },
+    });
+
+    return groups;
+  }
 }
