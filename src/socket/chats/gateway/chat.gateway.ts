@@ -26,7 +26,6 @@ import {
 import { IMessage } from '../interfaces/chat.interface';
 import { ChatRoomDto } from '../dtos/chat-room.dto';
 import { GroupsService } from 'src/modules/groups/services/group.service';
-import { ChatService } from '../services/chats.service';
 // import { WsJwtAuthGuard } from 'src/modules/auth/guards/ws-auth.guard';
 
 interface AuthenticatedSocket extends Socket {
@@ -58,7 +57,6 @@ export class ChatGateway
     private readonly conversationService: ConversationService,
     private readonly userGroupService: UsersGroupsService,
     private readonly groupService: GroupsService,
-    private readonly chatService: ChatService,
   ) {
     this.connectedUsers = new Set();
     this.connectedUsersCount = 0;
@@ -226,12 +224,6 @@ export class ChatGateway
     const socketUser = socket.handshake.__user;
 
     const members = await this.usersService.getUsersByIds(chatRoomDto.userIds);
-
-    // console.log(
-    //   Array.from(this.connectedUsers).filter((user) =>
-    //     members.find((member) => member.email === user.email),
-    //   ),
-    // );
 
     const memberSocketsInfo = [
       socket,
