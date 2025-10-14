@@ -189,16 +189,16 @@ export class ChatGateway
         (user) => user.email === receiverUserInfo.email,
       );
 
-      if (!receiverUserSocketInfo) {
-        const errorMessage = 'user unauthorized';
-        throw new WsException(errorMessage);
-      }
-
       await this.conversationService.createSingleConvo({
         message: trimmedMessage,
         senderId: socketUser.id,
         receiverId: message.receiverUserId,
       });
+
+      if (!receiverUserSocketInfo) {
+        const errorMessage = 'receiver not available';
+        throw new WsException(errorMessage);
+      }
 
       this.server
         .to(receiverUserSocketInfo.socketInfo.id)
