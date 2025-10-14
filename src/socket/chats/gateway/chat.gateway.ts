@@ -96,12 +96,16 @@ export class ChatGateway
     });
   }
 
-  handleConnection(@ConnectedSocket() client: AuthenticatedSocket) {
+  async handleConnection(@ConnectedSocket() client: AuthenticatedSocket) {
     const socketUser: UserEntity = client.handshake.__user;
 
     this.connectedUsers.add({ email: socketUser.email, socketInfo: client });
     this.connectedUsersCount++;
     this.showConnectedClients();
+
+    const groups = await this.usersService.findGroups(socketUser.id);
+
+    groups.forEach((group) => client.join(`room__${group.group.id}`));
   }
 
   handleDisconnect(@ConnectedSocket() client: AuthenticatedSocket) {
