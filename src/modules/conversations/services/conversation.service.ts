@@ -105,6 +105,9 @@ export class ConversationService {
           role: true,
         },
       },
+      order: {
+        createdAt: 'DESC',
+      },
     });
   }
 }
