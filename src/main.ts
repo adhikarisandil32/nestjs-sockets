@@ -4,6 +4,7 @@ import { Logger, ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as fs from 'fs';
 import { APP_MODE } from './common/configs/app.config';
+import { swaggerInit } from './swagger';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
@@ -62,6 +63,8 @@ async function bootstrap() {
       console.log(new Error(error));
     }
   }
+
+  await swaggerInit(app);
 
   await app
     .listen(port)
