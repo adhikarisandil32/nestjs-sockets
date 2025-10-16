@@ -8,10 +8,10 @@ export class ConversationReadController {
   constructor() {}
 
   @UserProtected()
-  @Get(':receiverId/single')
+  @Get('single/:receiverId')
   async getLastSingleReadConvo() {}
 
   @UserProtected()
-  @Get(':groupId/group')
+  @Get('group/:groupId')
   async getLastGroupReadConvo() {}
 }
