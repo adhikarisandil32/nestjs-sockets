@@ -24,10 +24,7 @@ export class ConversationController {
 
   @UserProtected()
   @Get(':groupId/group-all')
-  async getAllGroupConvos(
-    @User() user: UserEntity,
-    @Param('groupId') groupId: number,
-  ) {
+  async getAllGroupConvos(@Param('groupId') groupId: number) {
     return await this.convoService.getGroupConvo({
       groupId,
     });
