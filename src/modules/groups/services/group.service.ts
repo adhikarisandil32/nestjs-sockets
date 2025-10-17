@@ -83,33 +83,57 @@ export class GroupsService {
     }
   }
 
-  async getAllGroups() {
-    return await this._groupRepo.find({});
+  async getAllGroups({ userId }: { userId: number }) {
+    return await this._dataSource.getRepository(UserGroupEntity).find({
+      where: {
+        member: {
+          id: userId,
+        },
+      },
+      relations: {
+        group: true,
+      },
+    });
   }
 
-  async getGroupMembers(groupId: number) {
-    // const queryBuilder = this._dataSource.createQueryBuilder();
-    // const groupMembersQuery = queryBuilder
-    //   .from(TableNames.UsersGroupsLinkerTable, 'ug')
-    //   .leftJoinAndSelect(TableNames.UsersTable, 'u', 'u.id = ug.user_id')
-    //   .leftJoinAndSelect(TableNames.GroupsTable, 'g', 'g.id = ug.group_id')
-    //   .select([
-    //     'g.id group_id',
-    //     'g.name group_name',
-    //     'u.id id',
-    //     'u.name name',
-    //     'u.email email',
-    //     'u.role role',
-    //     'u.is_active is_active',
-    //     'u.created_at created_at',
-    //     'u.updated_at updated_at',
-    //     'u.deleted_at deleted_at',
-    //   ])
-    //   .where('ug.group_id = :groupId', { groupId });
-    // const groupMembers = await groupMembersQuery.getRawMany();
-    // // console.log(groupMembersQuery.getQueryAndParameters());
-    // // console.log(groupMembers);
-    // return groupMembers;
+  async getGroupMembers({
+    groupId,
+    userId,
+  }: {
+    groupId: number;
+    userId: number;
+  }) {
+    const userExistsInGroup = await this._dataSource
+      .getRepository(UserGroupEntity)
+      .findOne({
+        where: {
+          member: {
+            id: userId,
+          },
+          group: {
+            id: groupId,
+          },
+        },
+      });
+
+    if (!userExistsInGroup) {
+      throw new BadRequestException("user doesn't belong to group");
+    }
+
+    const groupMembers = await this._dataSource
+      .getRepository(UserGroupEntity)
+      .find({
+        where: {
+          group: {
+            id: groupId,
+          },
+        },
+        relations: {
+          member: true,
+        },
+      });
+
+    return groupMembers;
   }
 
   async addMembers({

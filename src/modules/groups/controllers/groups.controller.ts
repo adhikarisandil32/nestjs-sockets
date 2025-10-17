@@ -11,14 +11,19 @@ import { UserEntity } from 'src/modules/users/entities/user.entity';
 export class GroupsController {
   constructor(private readonly _groupService: GroupsService) {}
 
+  @UserProtected()
   @Get('all')
-  async getAllGroups() {
-    return await this._groupService.getAllGroups();
+  async getAllGroups(@User() user: UserEntity) {
+    return await this._groupService.getAllGroups({ userId: user.id });
   }
 
+  @UserProtected()
   @Get(':id/members')
-  async getGroupById(@Param('id') groupId: number) {
-    return await this._groupService.getGroupMembers(groupId);
+  async getGroupById(@Param('id') groupId: number, @User() user: UserEntity) {
+    return await this._groupService.getGroupMembers({
+      groupId,
+      userId: user.id,
+    });
   }
 
   @UserProtected()
