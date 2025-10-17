@@ -3,7 +3,7 @@ import { DBBaseEntity } from 'src/common/database/entities/base.entity';
 import { Column, Entity } from 'typeorm';
 
 @Entity({ name: TableNames.GroupConversationReadsTable })
-export class GroupConversationReads extends DBBaseEntity {
+export class ReadGroupConversationEntity extends DBBaseEntity {
   // @ManyToOne(() => UserEntity, (user) => user.id, { nullable: false })
   @Column({ name: 'sender_id' })
   senderId: number;

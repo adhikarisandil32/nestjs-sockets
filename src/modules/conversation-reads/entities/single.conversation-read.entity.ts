@@ -3,14 +3,14 @@ import { DBBaseEntity } from 'src/common/database/entities/base.entity';
 import { Column, Entity } from 'typeorm';
 
 @Entity({ name: TableNames.SingleConversationReadsTable })
-export class SingleConversationReads extends DBBaseEntity {
+export class ReadSingleConversationEntity extends DBBaseEntity {
   // @ManyToOne(() => UserEntity, (user) => user.id, { nullable: false })
-  @Column({ name: 'sender_id' })
-  senderId: number;
+  @Column({ name: 'requesting_user_id' })
+  requestingUserId: number;
 
   // @ManyToOne(() => UserEntity, (user) => user.id, { nullable: false })
-  @Column({ name: 'receiver_id' })
-  receiverId: number;
+  @Column({ name: 'requested_user_id' })
+  requestedUserId: number;
 
   // @ManyToOne(
   //   () => SingleConversationEntity,
