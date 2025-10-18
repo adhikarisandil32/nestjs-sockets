@@ -60,14 +60,10 @@ export class ConversationService {
     return await this.singleConvRepo.find({
       where: [
         {
-          sender: { id: userIds.senderId },
-          receiver: { id: userIds.receiverId },
-          status: MESSAGE_STATUS.SENT,
+          sender: In([userIds.receiverId, userIds.senderId]),
         },
         {
-          sender: { id: userIds.receiverId },
-          receiver: { id: userIds.senderId },
-          status: MESSAGE_STATUS.SENT,
+          receiver: In([userIds.receiverId, userIds.senderId]),
         },
       ],
       order: {
@@ -83,6 +79,30 @@ export class ConversationService {
       },
       relations: {
         sender: true,
+      },
+    });
+  }
+
+  async getGroupConvo({ groupId }: { groupId: number }) {
+    return await this.groupConvoRepo.find({
+      where: {
+        group: {
+          id: groupId,
+        },
+      },
+      relations: {
+        sender: true,
+      },
+      select: {
+        sender: {
+          id: true,
+          name: true,
+          email: true,
+          role: true,
+        },
+      },
+      order: {
+        createdAt: 'DESC',
       },
     });
   }

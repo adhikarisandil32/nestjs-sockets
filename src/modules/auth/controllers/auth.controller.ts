@@ -3,7 +3,9 @@ import { AuthService } from '../services/auth.service';
 import { LoginAuthDto } from '../dtos/login.auth.dto';
 import { Request as IRequest } from 'express';
 import { UserProtected } from '../decorators/auth-guard.decorator';
+import { ApiTags } from '@nestjs/swagger';
 
+@ApiTags('Authentication')
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}

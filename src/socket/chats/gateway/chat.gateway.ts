@@ -23,9 +23,10 @@ import {
   SocketEvents,
   SocketNamespaces,
 } from 'src/socket/constants/socket.constants';
-import { IMessage } from '../interfaces/chat.interface';
+import { ILastReadUpdate, IMessage } from '../interfaces/chat.interface';
 import { ChatRoomDto } from '../dtos/chat-room.dto';
 import { GroupsService } from 'src/modules/groups/services/group.service';
+import { LastReadConversationService } from 'src/modules/conversation-reads/services/conversation-read.service';
 // import { WsJwtAuthGuard } from 'src/modules/auth/guards/ws-auth.guard';
 
 interface AuthenticatedSocket extends Socket {
@@ -57,6 +58,7 @@ export class ChatGateway
     private readonly conversationService: ConversationService,
     private readonly userGroupService: UsersGroupsService,
     private readonly groupService: GroupsService,
+    private readonly lastReadConversationService: LastReadConversationService,
   ) {
     this.connectedUsers = new Set();
     this.connectedUsersCount = 0;
@@ -198,7 +200,7 @@ export class ChatGateway
       });
 
       if (!receiverUserSocketInfo) {
-        const errorMessage = 'receiver not available';
+        const errorMessage = 'receiver not online';
         throw new WsException(errorMessage);
       }
 
@@ -251,6 +253,43 @@ export class ChatGateway
     // console.log(this.server.adapter?.['rooms']);
 
     return { roomName };
+  }
+
+  @SubscribeMessage(SocketEvents.LastReadUpdates)
+  async handleLastReadConversationUpdates(
+    @ConnectedSocket() socket: AuthenticatedSocket,
+    @MessageBody() updateLastReadData: ILastReadUpdate,
+  ) {
+    const socketUser = socket.handshake.__user;
+
+    if (
+      (updateLastReadData.groupId && updateLastReadData.requestedUserId) ||
+      (!updateLastReadData.groupId && !updateLastReadData.requestedUserId)
+    ) {
+      throw new WsException('only provide either groupId or requestedUserId');
+    }
+
+    if (updateLastReadData.requestedUserId) {
+      const updatedLastRead =
+        await this.lastReadConversationService.updateSingleLastReadConvo({
+          requestingUserId: socketUser.id,
+          requestedUserId: updateLastReadData.requestedUserId,
+          lastReadConversationId: updateLastReadData.lastReadConversationId,
+        });
+
+      return updatedLastRead;
+    }
+
+    if (updateLastReadData.groupId) {
+      const updatedLastRead =
+        await this.lastReadConversationService.updateGroupLastReadConvo({
+          groupId: updateLastReadData.groupId,
+          senderId: socketUser.id,
+          lastReadConversationId: updateLastReadData.lastReadConversationId,
+        });
+
+      return updatedLastRead;
+    }
   }
 
   @SubscribeMessage('get-rooms')
