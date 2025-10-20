@@ -1,8 +1,15 @@
-import { Body, Controller, Get, Param, Patch, Post } from '@nestjs/common';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Get,
+  Param,
+  Patch,
+  Post,
+} from '@nestjs/common';
 import { CreateGroupDto } from '../dtos/create.group.dto';
 import { GroupsService } from '../services/group.service';
 import { AddMmbersDto, RemoveMembersDto } from '../dtos/update.group.dto';
-import { PutUserToRequest } from 'src/modules/auth/guards/put-user.guard';
 import { UserProtected } from 'src/modules/auth/decorators/auth-guard.decorator';
 import { User } from 'src/modules/auth/decorators/param.decorator';
 import { UserEntity } from 'src/modules/users/entities/user.entity';
@@ -12,9 +19,15 @@ export class GroupsController {
   constructor(private readonly _groupService: GroupsService) {}
 
   @UserProtected()
-  @Get('all')
-  async getAllGroups(@User() user: UserEntity) {
-    return await this._groupService.getAllGroups({ userId: user.id });
+  @Get('me-member')
+  async getMeMemberGroups(@User() user: UserEntity) {
+    return await this._groupService.getMeMemberGroups({ userId: user.id });
+  }
+
+  @UserProtected()
+  @Get('me-admin')
+  async getMeAdminGroups(@User() user: UserEntity) {
+    return await this._groupService.getMeAdminGroups({ userId: user.id });
   }
 
   @UserProtected()

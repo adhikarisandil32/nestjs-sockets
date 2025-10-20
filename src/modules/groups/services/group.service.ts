@@ -83,7 +83,7 @@ export class GroupsService {
     }
   }
 
-  async getAllGroups({ userId }: { userId: number }) {
+  async getMeMemberGroups({ userId }: { userId: number }) {
     return await this._dataSource.getRepository(UserGroupEntity).find({
       where: {
         member: {
@@ -94,6 +94,18 @@ export class GroupsService {
         group: true,
       },
     });
+  }
+
+  async getMeAdminGroups({ userId }: { userId: number }) {
+    const groupsMeAdmin = await this._groupRepo.find({
+      where: {
+        groupAdmin: {
+          id: userId,
+        },
+      },
+    });
+
+    return groupsMeAdmin;
   }
 
   async getGroupMembers({
@@ -172,9 +184,11 @@ export class GroupsService {
   async removeMembers({
     groupId,
     memberIds,
+    requestingUser,
   }: {
     groupId: number;
     memberIds: number[];
+    requestingUser: UserEntity;
   }) {
     const groupAdmin = await this._groupRepo.findOne({
       where: {
