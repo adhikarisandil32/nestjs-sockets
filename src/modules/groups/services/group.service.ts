@@ -176,6 +176,23 @@ export class GroupsService {
     groupId: number;
     memberIds: number[];
   }) {
+    const groupAdmin = await this._groupRepo.findOne({
+      where: {
+        id: groupId,
+        groupAdmin: {
+          id: requestingUser.id,
+          email: requestingUser.email,
+        },
+      },
+      relations: {
+        groupAdmin: true,
+      },
+    });
+
+    if (!groupAdmin) {
+      throw new BadRequestException('only admin can remove members');
+    }
+
     const queryBuilder = this._dataSource.createQueryBuilder();
 
     await queryBuilder

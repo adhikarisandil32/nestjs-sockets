@@ -35,6 +35,7 @@ export class GroupsController {
     return await this._groupService.create(user, createGroupDto);
   }
 
+  @UserProtected()
   @Patch(':id/add-members')
   async addMembers(
     @Param('id') groupId: number,
@@ -53,21 +54,24 @@ export class GroupsController {
     });
   }
 
+  @UserProtected()
   @Patch(':id/remove-members')
   async removeMembers(
     @Param('id') groupId: number,
     @Body() removeMembersDto: RemoveMembersDto,
+    @User() user: UserEntity,
   ) {
     if (
       removeMembersDto.memberIds == null ||
       removeMembersDto.memberIds.length <= 0
     ) {
-      return;
+      throw new BadRequestException('no users selected to remove');
     }
 
     return await this._groupService.removeMembers({
       groupId,
       memberIds: removeMembersDto.memberIds,
+      requestingUser: user,
     });
   }
 }
