@@ -20,7 +20,7 @@ export async function swaggerInit(app: NestApplication) {
     },
   );
 
-  SwaggerModule.setup('api-docs/admin', app, apiRouterDocument, {
+  SwaggerModule.setup('api-docs', app, apiRouterDocument, {
     customSiteTitle: 'Chat App Backend - Admin',
     swaggerOptions: {
       tagsSorter: (a: string, b: string) => {
