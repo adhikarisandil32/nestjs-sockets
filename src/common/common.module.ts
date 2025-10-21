@@ -16,7 +16,11 @@ import { ErrorFilterModule } from './error/error.module';
       pinoHttp: {
         transport: {
           target: 'pino-pretty',
+          options: {
+            singleLine: true,
+          },
         },
+        level: 'error',
       },
     }),
     // HealthModule,
