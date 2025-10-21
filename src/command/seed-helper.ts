@@ -4,6 +4,7 @@ import { In, Repository } from 'typeorm';
 import { faker } from '@faker-js/faker';
 import { GroupEntity } from 'src/modules/groups/entities/group.entity';
 import { UserGroupEntity } from 'src/modules/users-groups/entities/users-groups.entity';
+import { UserGroupJoinStatus } from 'src/modules/users-groups/constants/user-group.constant';
 
 /**************************
  ** This is users seeder **
@@ -149,7 +150,10 @@ export async function seedGroupsUsers(
 
     const lengthOfGroups = 3,
       lengthOfMembers = 3;
-    const prepatedData: Pick<UserGroupEntity, 'group' | 'member'>[] = [];
+    const prepatedData: Pick<
+      UserGroupEntity,
+      'group' | 'member' | 'joinStatus'
+    >[] = [];
 
     const [groups, members] = await Promise.all([
       groupsRepository.find({
@@ -163,6 +167,7 @@ export async function seedGroupsUsers(
         prepatedData.push({
           group: groups[i],
           member: members[j],
+          joinStatus: UserGroupJoinStatus.Approved,
         });
       }
     }
