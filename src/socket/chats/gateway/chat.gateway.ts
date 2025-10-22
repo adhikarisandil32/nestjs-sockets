@@ -263,7 +263,7 @@ export class ChatGateway
     @MessageBody() updateLastReadData: ILastReadUpdate,
   ) {
     const socketUser = socket.handshake.__user;
-
+    // try {
     if (
       (updateLastReadData.groupId && updateLastReadData.requestedUserId) ||
       (!updateLastReadData.groupId && !updateLastReadData.requestedUserId)
@@ -292,6 +292,12 @@ export class ChatGateway
 
       return updatedLastRead;
     }
+
+    throw new WsException('no group or receiver id provided');
+    // } catch (error) {
+    //   console.log('from socket: ', socket.id);
+    //   throw new WsException(error.message ?? 'Request Execution Failed');
+    // }
   }
 
   @SubscribeMessage('get-rooms')
