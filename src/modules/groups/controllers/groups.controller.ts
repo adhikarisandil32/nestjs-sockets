@@ -19,6 +19,15 @@ export class GroupsController {
   constructor(private readonly _groupService: GroupsService) {}
 
   @UserProtected()
+  @Post('create')
+  async create(
+    @User() user: UserEntity,
+    @Body() createGroupDto: CreateGroupDto,
+  ) {
+    return await this._groupService.create(user, createGroupDto);
+  }
+
+  @UserProtected()
   @Get('me-member')
   async getMeMemberGroups(@User() user: UserEntity) {
     return await this._groupService.getMeMemberGroups({ userId: user.id });
@@ -37,15 +46,6 @@ export class GroupsController {
       groupId,
       userId: user.id,
     });
-  }
-
-  @UserProtected()
-  @Post('create')
-  async create(
-    @User() user: UserEntity,
-    @Body() createGroupDto: CreateGroupDto,
-  ) {
-    return await this._groupService.create(user, createGroupDto);
   }
 
   @UserProtected()
