@@ -165,7 +165,7 @@ export class ChatGateway
         throw new WsException(errorMessage);
       }
 
-      await this.conversationService.createGroupConvo({
+      const conversation = await this.conversationService.createGroupConvo({
         message: trimmedMessage,
         senderId: socketUser.id,
         groupId: message.groupId,
@@ -175,6 +175,7 @@ export class ChatGateway
         senderName: socketUser.name,
         message: trimmedMessage,
         groupId: message.groupId,
+        conversationId: conversation.id,
       });
     }
 
@@ -193,7 +194,7 @@ export class ChatGateway
         (user) => user.email === receiverUserInfo.email,
       );
 
-      await this.conversationService.createSingleConvo({
+      const conversation = await this.conversationService.createSingleConvo({
         message: trimmedMessage,
         senderId: socketUser.id,
         receiverId: message.receiverUserId,
@@ -210,6 +211,7 @@ export class ChatGateway
           senderName: socketUser.name,
           message: trimmedMessage,
           receiverId: message.receiverUserId,
+          conversationId: conversation.id,
         });
     }
 
