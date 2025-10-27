@@ -32,6 +32,8 @@ export class ConversationService {
     });
 
     await this.singleConvRepo.save(preparedMessage);
+
+    return preparedMessage;
   }
 
   async createGroupConvo(groupConvoDto: CreateGroupConversationDto) {
@@ -47,6 +49,8 @@ export class ConversationService {
     });
 
     await this.groupConvoRepo.save(preparedMessage);
+
+    return preparedMessage;
   }
 
   async getSingleConvos({

@@ -12,9 +12,9 @@ export class UsersController {
     return await this.usersService.getAllUsers();
   }
 
-  @UserProtected()
-  @Get(':id/groups')
-  async getGroups(@Param('id') userId: number) {
-    return await this.usersService.findGroups(userId);
-  }
+  // @UserProtected()
+  // @Get(':id/groups')
+  // async getGroups(@Param('id') userId: number) {
+  //   return await this.usersService.findGroups(userId);
+  // }
 }

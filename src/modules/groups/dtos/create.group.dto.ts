@@ -1,3 +1,4 @@
+import { ApiProperty } from '@nestjs/swagger';
 import {
   IsArray,
   IsInt,
@@ -7,14 +8,22 @@ import {
 } from 'class-validator';
 
 export class CreateGroupDto {
+  @ApiProperty({
+    type: 'string',
+    example: "Friends' Circle",
+  })
   @IsString()
   @IsOptional()
-  name: string = 'my group';
+  name: string = 'My Group';
 
   // @IsInt()
   // @IsPositive()
   // groupAdminId: number;
 
+  @ApiProperty({
+    type: 'array',
+    example: [1, 2, 3],
+  })
   @IsArray()
   @IsInt({ each: true })
   @IsPositive({ each: true })

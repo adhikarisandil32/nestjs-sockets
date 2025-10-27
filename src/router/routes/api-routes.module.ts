@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { AuthModule } from 'src/modules/auth/auth.module';
 import { AuthController } from 'src/modules/auth/controllers/auth.controller';
-import { ConversationReadController } from 'src/modules/conversation-reads/controllers/group.conversation-read.controller';
+import { ConversationReadController } from 'src/modules/conversation-reads/controllers/conversation-read.controller';
 import { ConversationReadModule } from 'src/modules/conversation-reads/conversation-read.module';
 import { ConversationController } from 'src/modules/conversations/controllers/conversation.controller';
 import { ConversationModule } from 'src/modules/conversations/conversation.module';

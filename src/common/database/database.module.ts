@@ -25,6 +25,7 @@ import { IDbConfig } from '../configs/database.config';
           synchronize: dbConfig?.synchronize,
           entities: [__dirname + './../../**/*.entity{.ts,.js}'],
           migrations: [__dirname + './../../migrations/*{.ts,.js}'],
+          logging: ['query'], // log sql queries executed
         };
       },
       dataSourceFactory: async (options: DataSourceOptions) => {

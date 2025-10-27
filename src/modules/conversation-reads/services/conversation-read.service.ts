@@ -1,8 +1,9 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ReadSingleConversationEntity } from '../entities/single.conversation-read.entity';
 import { ReadGroupConversationEntity } from '../entities/group.conversation-read.entity';
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
+import { SingleConversationEntity } from 'src/modules/conversations/entities/single.conversation.entity';
 
 @Injectable()
 export class LastReadConversationService {
@@ -11,6 +12,7 @@ export class LastReadConversationService {
     private readonly singleLastReadConvo: Repository<ReadSingleConversationEntity>,
     @InjectRepository(ReadGroupConversationEntity)
     private readonly groupLastReadConvo: Repository<ReadGroupConversationEntity>,
+    private readonly dataSource: DataSource,
   ) {}
 
   async getSingleLastReadConvo({
@@ -56,6 +58,18 @@ export class LastReadConversationService {
     requestedUserId: number;
     lastReadConversationId: number;
   }) {
+    const conversation = await this.dataSource
+      .getRepository(SingleConversationEntity)
+      .findOne({
+        where: {
+          id: lastReadConversationId,
+        },
+      });
+
+    if (!conversation) {
+      throw new NotFoundException("such conversation doesn't exist");
+    }
+
     const lastReadConvo = await this.singleLastReadConvo.findOne({
       where: {
         requestingUserId,
@@ -93,6 +107,18 @@ export class LastReadConversationService {
     senderId: number;
     lastReadConversationId: number;
   }) {
+    const conversation = await this.dataSource
+      .getRepository(SingleConversationEntity)
+      .findOne({
+        where: {
+          id: lastReadConversationId,
+        },
+      });
+
+    if (!conversation) {
+      throw new NotFoundException("such conversation doesn't exist");
+    }
+
     const lastReadConvo = await this.groupLastReadConvo.findOne({
       where: {
         groupId,

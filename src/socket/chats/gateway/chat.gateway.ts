@@ -106,6 +106,8 @@ export class ChatGateway
     const groups = await this.usersService.findGroups(socketUser.id);
 
     groups.forEach((group) => client.join(`room__${group.group.id}`));
+
+    return;
   }
 
   handleDisconnect(@ConnectedSocket() client: AuthenticatedSocket) {
@@ -123,6 +125,8 @@ export class ChatGateway
     }
 
     this.showConnectedClients();
+
+    return;
   }
 
   showConnectedClients() {
@@ -130,6 +134,7 @@ export class ChatGateway
       users: Array.from(this.connectedUsers).map((user) => user.email),
       count: this.connectedUsersCount,
     });
+    return;
   }
 
   @SubscribeMessage(SocketEvents.Message)
@@ -165,7 +170,7 @@ export class ChatGateway
         throw new WsException(errorMessage);
       }
 
-      await this.conversationService.createGroupConvo({
+      const conversation = await this.conversationService.createGroupConvo({
         message: trimmedMessage,
         senderId: socketUser.id,
         groupId: message.groupId,
@@ -175,6 +180,7 @@ export class ChatGateway
         senderName: socketUser.name,
         message: trimmedMessage,
         groupId: message.groupId,
+        conversationId: conversation.id,
       });
     }
 
@@ -193,7 +199,7 @@ export class ChatGateway
         (user) => user.email === receiverUserInfo.email,
       );
 
-      await this.conversationService.createSingleConvo({
+      const conversation = await this.conversationService.createSingleConvo({
         message: trimmedMessage,
         senderId: socketUser.id,
         receiverId: message.receiverUserId,
@@ -210,6 +216,7 @@ export class ChatGateway
           senderName: socketUser.name,
           message: trimmedMessage,
           receiverId: message.receiverUserId,
+          conversationId: conversation.id,
         });
     }
 
@@ -220,9 +227,6 @@ export class ChatGateway
 
   @SubscribeMessage(SocketEvents.CreateRoom)
   async createRoom(socket: AuthenticatedSocket, chatRoomDto: ChatRoomDto) {
-    // console.log(chatRoomDto);
-    // console.log(socket.rooms, socket.id);
-
     const socketUser = socket.handshake.__user;
 
     const members = await this.usersService.getUsersByIds(chatRoomDto.userIds);
@@ -261,34 +265,39 @@ export class ChatGateway
     @MessageBody() updateLastReadData: ILastReadUpdate,
   ) {
     const socketUser = socket.handshake.__user;
+    try {
+      if (
+        (updateLastReadData.groupId && updateLastReadData.requestedUserId) ||
+        (!updateLastReadData.groupId && !updateLastReadData.requestedUserId)
+      ) {
+        throw new WsException('only provide either groupId or requestedUserId');
+      }
 
-    if (
-      (updateLastReadData.groupId && updateLastReadData.requestedUserId) ||
-      (!updateLastReadData.groupId && !updateLastReadData.requestedUserId)
-    ) {
-      throw new WsException('only provide either groupId or requestedUserId');
-    }
+      if (updateLastReadData.requestedUserId) {
+        const updatedLastRead =
+          await this.lastReadConversationService.updateSingleLastReadConvo({
+            requestingUserId: socketUser.id,
+            requestedUserId: updateLastReadData.requestedUserId,
+            lastReadConversationId: updateLastReadData.lastReadConversationId,
+          });
 
-    if (updateLastReadData.requestedUserId) {
-      const updatedLastRead =
-        await this.lastReadConversationService.updateSingleLastReadConvo({
-          requestingUserId: socketUser.id,
-          requestedUserId: updateLastReadData.requestedUserId,
-          lastReadConversationId: updateLastReadData.lastReadConversationId,
-        });
+        return updatedLastRead;
+      }
 
-      return updatedLastRead;
-    }
+      if (updateLastReadData.groupId) {
+        const updatedLastRead =
+          await this.lastReadConversationService.updateGroupLastReadConvo({
+            groupId: updateLastReadData.groupId,
+            senderId: socketUser.id,
+            lastReadConversationId: updateLastReadData.lastReadConversationId,
+          });
 
-    if (updateLastReadData.groupId) {
-      const updatedLastRead =
-        await this.lastReadConversationService.updateGroupLastReadConvo({
-          groupId: updateLastReadData.groupId,
-          senderId: socketUser.id,
-          lastReadConversationId: updateLastReadData.lastReadConversationId,
-        });
+        return updatedLastRead;
+      }
 
-      return updatedLastRead;
+      throw new WsException('no group or receiver id provided');
+    } catch (error) {
+      throw new WsException(error.message ?? 'Request Execution Failed');
     }
   }
 

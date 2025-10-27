@@ -5,7 +5,7 @@ import { CreateGroupDto } from '../dtos/create.group.dto';
 import { UserEntity } from 'src/modules/users/entities/user.entity';
 import { TableNames } from 'src/common/database/constants/common.constant';
 import { UserGroupEntity } from 'src/modules/users-groups/entities/users-groups.entity';
-import { BadRequestException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException } from '@nestjs/common';
 
 export class GroupsService {
   constructor(
@@ -24,7 +24,7 @@ export class GroupsService {
       });
 
     if (!groupAdmin) {
-      throw new BadRequestException('no group admin data');
+      throw new BadRequestException('no group-admin data');
     }
 
     if (usersForGroup.length <= 0) {
@@ -83,7 +83,7 @@ export class GroupsService {
     }
   }
 
-  async getAllGroups({ userId }: { userId: number }) {
+  async getMeMemberGroups({ userId }: { userId: number }) {
     return await this._dataSource.getRepository(UserGroupEntity).find({
       where: {
         member: {
@@ -94,6 +94,18 @@ export class GroupsService {
         group: true,
       },
     });
+  }
+
+  async getMeAdminGroups({ userId }: { userId: number }) {
+    const groupsMeAdmin = await this._groupRepo.find({
+      where: {
+        groupAdmin: {
+          id: userId,
+        },
+      },
+    });
+
+    return groupsMeAdmin;
   }
 
   async getGroupMembers({
@@ -117,7 +129,7 @@ export class GroupsService {
       });
 
     if (!userExistsInGroup) {
-      throw new BadRequestException("user doesn't belong to group");
+      throw new ForbiddenException("user doesn't belong to group");
     }
 
     const groupMembers = await this._dataSource
@@ -172,10 +184,29 @@ export class GroupsService {
   async removeMembers({
     groupId,
     memberIds,
+    requestingUser,
   }: {
     groupId: number;
     memberIds: number[];
+    requestingUser: UserEntity;
   }) {
+    const groupAdmin = await this._groupRepo.findOne({
+      where: {
+        id: groupId,
+        groupAdmin: {
+          id: requestingUser.id,
+          email: requestingUser.email,
+        },
+      },
+      relations: {
+        groupAdmin: true,
+      },
+    });
+
+    if (!groupAdmin) {
+      throw new BadRequestException('only admin can remove members');
+    }
+
     const queryBuilder = this._dataSource.createQueryBuilder();
 
     await queryBuilder
