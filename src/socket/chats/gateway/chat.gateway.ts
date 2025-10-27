@@ -263,41 +263,40 @@ export class ChatGateway
     @MessageBody() updateLastReadData: ILastReadUpdate,
   ) {
     const socketUser = socket.handshake.__user;
-    // try {
-    if (
-      (updateLastReadData.groupId && updateLastReadData.requestedUserId) ||
-      (!updateLastReadData.groupId && !updateLastReadData.requestedUserId)
-    ) {
-      throw new WsException('only provide either groupId or requestedUserId');
+    try {
+      if (
+        (updateLastReadData.groupId && updateLastReadData.requestedUserId) ||
+        (!updateLastReadData.groupId && !updateLastReadData.requestedUserId)
+      ) {
+        throw new WsException('only provide either groupId or requestedUserId');
+      }
+
+      if (updateLastReadData.requestedUserId) {
+        const updatedLastRead =
+          await this.lastReadConversationService.updateSingleLastReadConvo({
+            requestingUserId: socketUser.id,
+            requestedUserId: updateLastReadData.requestedUserId,
+            lastReadConversationId: updateLastReadData.lastReadConversationId,
+          });
+
+        return updatedLastRead;
+      }
+
+      if (updateLastReadData.groupId) {
+        const updatedLastRead =
+          await this.lastReadConversationService.updateGroupLastReadConvo({
+            groupId: updateLastReadData.groupId,
+            senderId: socketUser.id,
+            lastReadConversationId: updateLastReadData.lastReadConversationId,
+          });
+
+        return updatedLastRead;
+      }
+
+      throw new WsException('no group or receiver id provided');
+    } catch (error) {
+      throw new WsException(error.message ?? 'Request Execution Failed');
     }
-
-    if (updateLastReadData.requestedUserId) {
-      const updatedLastRead =
-        await this.lastReadConversationService.updateSingleLastReadConvo({
-          requestingUserId: socketUser.id,
-          requestedUserId: updateLastReadData.requestedUserId,
-          lastReadConversationId: updateLastReadData.lastReadConversationId,
-        });
-
-      return updatedLastRead;
-    }
-
-    if (updateLastReadData.groupId) {
-      const updatedLastRead =
-        await this.lastReadConversationService.updateGroupLastReadConvo({
-          groupId: updateLastReadData.groupId,
-          senderId: socketUser.id,
-          lastReadConversationId: updateLastReadData.lastReadConversationId,
-        });
-
-      return updatedLastRead;
-    }
-
-    throw new WsException('no group or receiver id provided');
-    // } catch (error) {
-    //   console.log('from socket: ', socket.id);
-    //   throw new WsException(error.message ?? 'Request Execution Failed');
-    // }
   }
 
   @SubscribeMessage('get-rooms')
