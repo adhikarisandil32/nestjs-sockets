@@ -12,7 +12,7 @@ services:
       POSTGRES_PASSWORD: '${DATABASE_PASSWORD}'
       POSTGRES_DB: '${DATABASE_NAME}'
     ports:
-      - '5439:5432'
+      - '${DATABASE_PORT}:5432'
     restart: 'unless-stopped'
     volumes:
       - ../${DATABASE_NAME}_pg_data:/var/lib/postgresql/data
