@@ -106,6 +106,8 @@ export class ChatGateway
     const groups = await this.usersService.findGroups(socketUser.id);
 
     groups.forEach((group) => client.join(`room__${group.group.id}`));
+
+    return;
   }
 
   handleDisconnect(@ConnectedSocket() client: AuthenticatedSocket) {
@@ -123,6 +125,8 @@ export class ChatGateway
     }
 
     this.showConnectedClients();
+
+    return;
   }
 
   showConnectedClients() {
@@ -130,6 +134,7 @@ export class ChatGateway
       users: Array.from(this.connectedUsers).map((user) => user.email),
       count: this.connectedUsersCount,
     });
+    return;
   }
 
   @SubscribeMessage(SocketEvents.Message)
@@ -222,9 +227,6 @@ export class ChatGateway
 
   @SubscribeMessage(SocketEvents.CreateRoom)
   async createRoom(socket: AuthenticatedSocket, chatRoomDto: ChatRoomDto) {
-    // console.log(chatRoomDto);
-    // console.log(socket.rooms, socket.id);
-
     const socketUser = socket.handshake.__user;
 
     const members = await this.usersService.getUsersByIds(chatRoomDto.userIds);
