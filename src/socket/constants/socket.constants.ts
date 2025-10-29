@@ -8,6 +8,7 @@ export enum SocketEvents {
 
   CreateRoom = 'create-room',
   LastReadUpdates = 'last-read-updates',
+  ExistingRooms = 'existing-rooms',
 }
 
 export enum SocketNamespaces {
