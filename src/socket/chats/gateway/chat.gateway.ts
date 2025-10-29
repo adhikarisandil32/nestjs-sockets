@@ -50,6 +50,7 @@ export class ChatGateway
   private jwtSecret: string;
   private connectedUsers: Set<IConnectedUser>;
   private connectedUsersCount: number;
+  // private rooms: Map<string, Set<string>>;
 
   constructor(
     private readonly configService: ConfigService,
@@ -61,6 +62,7 @@ export class ChatGateway
     private readonly lastReadConversationService: LastReadConversationService,
   ) {
     this.connectedUsers = new Set();
+    // this.rooms = new Map();
     this.connectedUsersCount = 0;
     this.jwtSecret = this.configService.get<string>('jwt.secretKey')!;
   }
@@ -103,9 +105,34 @@ export class ChatGateway
     this.connectedUsersCount++;
     this.showConnectedClients();
 
+    // const groups = await this.dataSource.getRepository(UserGroupEntity).find({
+    //   where: {
+    //     member: {
+    //       id: socketUser.id,
+    //     },
+    //   },
+    // });
+
+    // console.log(groups);
+
     const groups = await this.usersService.findGroups(socketUser.id);
 
-    groups.forEach((group) => client.join(`room__${group.group.id}`));
+    groups.forEach((group) => {
+      const roomIdentifier = `room__${group.group.id}`;
+      client.join(roomIdentifier);
+
+      // if (!this.rooms.has(roomIdentifier)) {
+      //   // const memberSocketIds = this.rooms.get(roomName)!
+
+      //   this.rooms.set(roomIdentifier, new Set(client.id));
+      //   return;
+      // }
+
+      // const existingRoomMembers = this.rooms.get(roomIdentifier)!;
+
+      // this.rooms.set(roomIdentifier, existingRoomMembers.add(client.id));
+      return;
+    });
 
     return;
   }
@@ -225,6 +252,7 @@ export class ChatGateway
     return;
   }
 
+  // possibility of optimization instead of n^2 loop
   @SubscribeMessage(SocketEvents.CreateRoom)
   async createRoom(socket: AuthenticatedSocket, chatRoomDto: ChatRoomDto) {
     const socketUser = socket.handshake.__user;
@@ -301,8 +329,26 @@ export class ChatGateway
     }
   }
 
-  @SubscribeMessage('get-rooms')
-  async getRooms() {
-    console.log(this.server.adapter?.['rooms']);
+  // almost a user never need to know if there is an active room. may be online users in a group. for that look up easier method on stackoverflow. it's there
+  @SubscribeMessage(SocketEvents.ExistingRooms)
+  async getRooms(@ConnectedSocket() socket: AuthenticatedSocket) {
+    const roomsMap: Map<string, Set<string>> = this.server.adapter?.['rooms'];
+
+    const roomsObj = Array.from(roomsMap).map(([room, sockets]) => ({
+      room,
+      activeSockets: Array.from(sockets),
+    }));
+
+    // console.log(roomsObj);
+
+    socket.emit(SocketEvents.ExistingRooms, roomsObj);
+    return;
+  }
+
+  @SubscribeMessage('list-sockets')
+  async listSockets(@ConnectedSocket() socket: AuthenticatedSocket) {
+    const connectedSockets = await this.server.fetchSockets();
+
+    console.log(connectedSockets);
   }
 }
