@@ -4,6 +4,7 @@ import { ReadSingleConversationEntity } from '../entities/single.conversation-re
 import { ReadGroupConversationEntity } from '../entities/group.conversation-read.entity';
 import { DataSource, Repository } from 'typeorm';
 import { SingleConversationEntity } from 'src/modules/conversations/entities/single.conversation.entity';
+import { UserGroupEntity } from 'src/modules/users-groups/entities/users-groups.entity';
 
 @Injectable()
 export class LastReadConversationService {
@@ -107,6 +108,23 @@ export class LastReadConversationService {
     senderId: number;
     lastReadConversationId: number;
   }) {
+    const userInGroup = await this.dataSource
+      .getRepository(UserGroupEntity)
+      .findOne({
+        where: {
+          group: {
+            id: groupId,
+          },
+          member: {
+            id: senderId,
+          },
+        },
+      });
+
+    if (!userInGroup) {
+      throw new Error("user doesn't belong to group");
+    }
+
     const conversation = await this.dataSource
       .getRepository(SingleConversationEntity)
       .findOne({
