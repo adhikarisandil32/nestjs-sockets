@@ -329,8 +329,11 @@ export class ChatGateway
     }
   }
 
-  // almost a user never need to know if there is an active room. may be online users in a group. for that look up easier method on stackoverflow. it's there
-  @SubscribeMessage(SocketEvents.ExistingRooms)
+  /**
+   * MARK: Utility Methods Only
+   */
+
+  @SubscribeMessage('existing-rooms')
   async getRooms(@ConnectedSocket() socket: AuthenticatedSocket) {
     const roomsMap: Map<string, Set<string>> = this.server.adapter?.['rooms'];
 
@@ -339,9 +342,8 @@ export class ChatGateway
       activeSockets: Array.from(sockets),
     }));
 
-    // console.log(roomsObj);
+    console.log(roomsObj);
 
-    socket.emit(SocketEvents.ExistingRooms, roomsObj);
     return;
   }
 
@@ -350,5 +352,22 @@ export class ChatGateway
     const connectedSockets = await this.server.fetchSockets();
 
     console.log(connectedSockets);
+  }
+
+  @SubscribeMessage('connected-socket-rooms')
+  async getConnectedSocketRooms(
+    @ConnectedSocket() socket: AuthenticatedSocket,
+  ) {
+    const rooms = socket.rooms;
+
+    console.log(rooms);
+  }
+
+  @SubscribeMessage('active-sockets-in-room')
+  async getActiveSocketsInRoom(@ConnectedSocket() socket: AuthenticatedSocket) {
+    const sockets = await this.server.in('room__1').fetchSockets();
+
+    console.log(sockets.map((socket) => socket.handshake?.['__user']));
+    // because the handshake doesn't contain the type of the __user while still has the value
   }
 }
