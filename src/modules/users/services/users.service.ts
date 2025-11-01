@@ -1,8 +1,9 @@
 import { InjectRepository } from '@nestjs/typeorm';
 import { UserEntity } from '../entities/user.entity';
 import { DataSource, In, Repository } from 'typeorm';
-import { Injectable } from '@nestjs/common';
+import { ConflictException, Injectable } from '@nestjs/common';
 import { UserGroupEntity } from 'src/modules/users-groups/entities/users-groups.entity';
+import { ICreateUser } from '../interfaces/create-user.interface';
 
 @Injectable()
 export class UsersService {
@@ -11,6 +12,24 @@ export class UsersService {
     private readonly userRepo: Repository<UserEntity>,
     private readonly _dataSource: DataSource,
   ) {}
+
+  async createUser(createUserDto: ICreateUser) {
+    const exisitingUser = await this.userRepo.findOne({
+      where: {
+        email: createUserDto.email,
+      },
+    });
+
+    if (exisitingUser) {
+      throw new ConflictException('email already taken');
+    }
+
+    const user = this.userRepo.create(createUserDto);
+
+    await this.userRepo.save(user);
+
+    return user;
+  }
 
   async getAllUsers() {
     return await this.userRepo.find({

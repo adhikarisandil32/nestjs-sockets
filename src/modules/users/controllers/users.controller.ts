@@ -1,20 +1,16 @@
-import { Controller, Get, Param } from '@nestjs/common';
-import { UserProtected } from 'src/modules/auth/decorators/auth-guard.decorator';
+import { Body, Controller, Post } from '@nestjs/common';
 import { UsersService } from '../services/users.service';
+import { CreateUserDto } from '../dtos/create-user.dto';
+import { USER_ROLE } from '../constants/user.constant';
 
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
-  @UserProtected()
-  @Get('all')
-  async getAllUsers() {
-    return await this.usersService.getAllUsers();
-  }
+  @Post('create')
+  async getAllUsers(@Body() createUserDto: CreateUserDto) {
+    createUserDto.role = USER_ROLE.USER;
 
-  // @UserProtected()
-  // @Get(':id/groups')
-  // async getGroups(@Param('id') userId: number) {
-  //   return await this.usersService.findGroups(userId);
-  // }
+    return await this.usersService.createUser(createUserDto);
+  }
 }
