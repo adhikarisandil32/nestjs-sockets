@@ -23,6 +23,7 @@ export class AwsService {
       },
       region: this.configService.get<string>('aws.region')!,
       endpoint: this.configService.get<string>('aws.endpoint')!,
+      forcePathStyle: true,
     });
     this.bucket = this.configService.get<string>('aws.bucketName')!;
     this.assetUrl = this.configService.get<string>('aws.assetUrl');
@@ -39,9 +40,10 @@ export class AwsService {
       ? `${options.path}/${options.fileName}`
       : options.fileName;
 
-    const mimeType: string = options.fileName
-      .substring(options.fileName.lastIndexOf('.') + 1, options.fileName.length)
-      .toUpperCase();
+    const mimeType: string = options.fileName.substring(
+      options.fileName.lastIndexOf('.') + 1,
+      options.fileName.length,
+    );
 
     const command: PutObjectCommand = new PutObjectCommand({
       Bucket: this.bucket,
