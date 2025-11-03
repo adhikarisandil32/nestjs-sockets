@@ -6,4 +6,5 @@ export enum TableNames {
   GroupConversationsTable = 'group_conversations',
   SingleConversationReadsTable = 'single_conversation_reads',
   GroupConversationReadsTable = 'group_conversation_reads',
+  FilesTable = 'files',
 }

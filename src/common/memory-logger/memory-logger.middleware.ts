@@ -2,7 +2,7 @@ import { Injectable, NestMiddleware } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NextFunction, Request, Response } from 'express';
 import * as fs from 'fs';
-import { APP_MODE } from '../configs/app.config';
+import { APP_MODE } from '../configs/service-configs/app.config';
 
 @Injectable()
 export class MemoryLoggerMiddleware implements NestMiddleware {

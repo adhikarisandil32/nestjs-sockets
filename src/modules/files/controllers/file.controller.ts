@@ -14,11 +14,12 @@ import {
   UploadFileSingle,
   UploadFilesMultiple,
 } from '../decorators/file-upload.decorator';
+import { FileService } from '../services/file.service';
 
 @ApiTags('File Uploads')
 @Controller('file')
-export class FileUploadController {
-  constructor() {}
+export class FileController {
+  constructor(private readonly fileUploadService: FileService) {}
 
   @Post('image/upload')
   @UploadFileSingle('file')
@@ -26,7 +27,17 @@ export class FileUploadController {
   async uploadImage(
     @UploadedFile() file: Express.Multer.File,
     @Body() fileInfo: SingleFileUploadDto,
-  ) {}
+  ) {
+    const fileExtension = file.originalname.split('.')?.at(-1);
+    const randomName = crypto.randomUUID();
+
+    const addedFile = await this.fileUploadService.addFile(file, {
+      path: fileInfo.folder,
+      fileName: `${randomName}.${fileExtension}`,
+    });
+
+    return addedFile;
+  }
 
   @Post('images/uploads')
   @UploadFilesMultiple('files')
