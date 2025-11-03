@@ -1,5 +1,5 @@
 import { Repository } from 'typeorm';
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { AwsService } from 'src/common/aws/services/aws.service';
 import { FileEntity } from '../entities/file.entity';
@@ -19,15 +19,41 @@ export class FileService {
   ) {
     const content: Buffer = file.buffer;
 
-    await this.awsService.putItemInBucket(content, fileOptions);
+    const uploadedFile = await this.awsService.putItemInBucket(
+      content,
+      fileOptions,
+    );
 
-    const addedFile = this.fileRepo.create({
-      path: fileOptions.path,
-      fileName: fileOptions.fileName,
-    });
+    const addedFile = this.fileRepo.create(uploadedFile);
 
     await this.fileRepo.save(addedFile);
 
     return addedFile;
+  }
+
+  async getFileInfoOrError(id: number) {
+    const fileInfo = await this.fileRepo.findOne({
+      where: {
+        id,
+      },
+    });
+
+    if (!fileInfo) {
+      throw new NotFoundException('file not available');
+    }
+
+    return fileInfo;
+  }
+
+  async updateFileInfo(
+    id: number,
+    infoToUpdate: { associationId: number; associationType: Folder },
+  ) {
+    const existingFile = await this.getFileInfoOrError(id);
+
+    existingFile.associationId = infoToUpdate.associationId;
+    existingFile.associationType = infoToUpdate.associationType;
+
+    return await this.fileRepo.save(existingFile);
   }
 }

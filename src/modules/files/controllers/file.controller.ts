@@ -1,6 +1,8 @@
 import {
   Body,
   Controller,
+  Get,
+  Param,
   Post,
   UploadedFile,
   UploadedFiles,
@@ -46,4 +48,9 @@ export class FileController {
     @UploadedFiles() files: Express.Multer.File[],
     @Body() filesInfo: MultiFileUploadDto,
   ) {}
+
+  @Get('images/:id')
+  async getImage(@Param('id') id: number) {
+    return await this.fileUploadService.getFileInfoOrError(id);
+  }
 }

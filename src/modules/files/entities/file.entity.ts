@@ -11,12 +11,12 @@ export class FileEntity extends DBBaseEntity {
   @Column({ name: 'filename', nullable: false })
   fileName: string;
 
-  @Column({ name: 'association_id', nullable: false })
+  @Column({ name: 'association_id', nullable: true })
   associationId: number;
 
   @Column({
     name: 'association_type',
-    nullable: false,
+    nullable: true,
     enum: Folder,
     type: 'enum',
   })
