@@ -22,7 +22,7 @@ services:
     container_name: '${APP_NAME}_minio'
     image: quay.io/minio/minio:RELEASE.2022-02-18T01-50-10Z
     volumes:
-      - ../data:/data
+      - ../minio_data:/data
     ports:
       - ${MINIO_PORT}:${MINIO_PORT}
       - ${MINIO_CONSOLE_PORT}:${MINIO_CONSOLE_PORT}
