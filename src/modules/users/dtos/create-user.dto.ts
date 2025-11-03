@@ -1,4 +1,13 @@
-import { IsEnum, IsNotEmpty, IsString, MinLength } from 'class-validator';
+import {
+  IsEnum,
+  IsInt,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsPositive,
+  IsString,
+  MinLength,
+} from 'class-validator';
 import { ICreateUser } from '../interfaces/create-user.interface';
 import { USER_ROLE } from '../constants/user.constant';
 import { ApiProperty } from '@nestjs/swagger';
@@ -32,4 +41,9 @@ export class CreateUserDto implements ICreateUser {
   @IsString()
   @IsEnum(USER_ROLE)
   role: USER_ROLE = USER_ROLE.USER;
+
+  @IsInt()
+  @IsPositive()
+  @IsOptional()
+  profilePictureId: number;
 }
