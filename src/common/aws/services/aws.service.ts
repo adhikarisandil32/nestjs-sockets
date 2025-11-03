@@ -61,6 +61,6 @@ export class AwsService {
       throw new BadRequestException('failed to upload images');
     }
 
-    return;
+    return options;
   }
 }
