@@ -2,6 +2,7 @@ import { UserBaseEntity } from 'src/common/database/entities/user.base.entity';
 import { Column, Entity, OneToMany } from 'typeorm';
 import { USER_ROLE } from '../constants/user.constant';
 import { TableNames } from 'src/common/database/constants/common.constant';
+import { FileEntity } from 'src/modules/files/entities/file.entity';
 
 @Entity({ name: TableNames.UsersTable })
 export class UserEntity extends UserBaseEntity {
@@ -16,4 +17,6 @@ export class UserEntity extends UserBaseEntity {
 
   @Column({ name: 'is_active', default: false })
   isActive: boolean;
+
+  profilePicture: FileEntity | null;
 }
