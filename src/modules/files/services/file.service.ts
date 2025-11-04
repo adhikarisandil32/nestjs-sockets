@@ -1,4 +1,4 @@
-import { Repository } from 'typeorm';
+import { FindOneOptions, Repository } from 'typeorm';
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { AwsService } from 'src/common/aws/services/aws.service';
@@ -31,15 +31,15 @@ export class FileService {
     return addedFile;
   }
 
-  async getFileInfoOrError(id: number) {
-    const fileInfo = await this.fileRepo.findOne({
-      where: {
-        id,
-      },
-    });
+  async findOne(options: FindOneOptions<FileEntity>) {
+    return await this.fileRepo.findOne(options);
+  }
+
+  async findOneOrError(options: FindOneOptions<FileEntity>) {
+    const fileInfo = await this.fileRepo.findOne(options);
 
     if (!fileInfo) {
-      throw new NotFoundException('file not available');
+      throw new NotFoundException('file not found');
     }
 
     return fileInfo;
@@ -49,7 +49,11 @@ export class FileService {
     id: number,
     infoToUpdate: { associationId: number; associationType: Folder },
   ) {
-    const existingFile = await this.getFileInfoOrError(id);
+    const existingFile = await this.findOneOrError({
+      where: {
+        id,
+      },
+    });
 
     existingFile.associationId = infoToUpdate.associationId;
     existingFile.associationType = infoToUpdate.associationType;

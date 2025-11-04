@@ -51,6 +51,10 @@ export class FileController {
 
   @Get('images/:id')
   async getImage(@Param('id') id: number) {
-    return await this.fileUploadService.getFileInfoOrError(id);
+    return await this.fileUploadService.findOneOrError({
+      where: {
+        id,
+      },
+    });
   }
 }
