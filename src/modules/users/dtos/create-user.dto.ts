@@ -44,7 +44,7 @@ export class CreateUserDto {
   @IsInt()
   @IsPositive()
   @IsOptional()
-  profilePictureId: number;
+  profilePictureId?: number;
 }
 
 export class CreateUserDtoSelf extends CreateUserDto {
