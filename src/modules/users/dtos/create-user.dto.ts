@@ -42,6 +42,10 @@ export class CreateUserDto implements ICreateUser {
   @IsEnum(USER_ROLE)
   role: USER_ROLE = USER_ROLE.USER;
 
+  @ApiProperty({
+    example: 1,
+    type: 'number',
+  })
   @IsInt()
   @IsPositive()
   @IsOptional()
