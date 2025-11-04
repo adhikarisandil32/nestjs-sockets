@@ -6,6 +6,9 @@ import { UserEntity } from 'src/modules/users/entities/user.entity';
 import { TableNames } from 'src/common/database/constants/common.constant';
 import { UserGroupEntity } from 'src/modules/users-groups/entities/users-groups.entity';
 import { BadRequestException, ForbiddenException } from '@nestjs/common';
+import { FileEntity } from 'src/modules/files/entities/file.entity';
+import { Folder } from 'src/modules/files/constants/folders.file-upload';
+import { UserGroupJoinStatus } from 'src/modules/users-groups/constants/user-group.constant';
 
 export class GroupsService {
   constructor(
@@ -45,6 +48,22 @@ export class GroupsService {
 
       await qrEntityManager.save(preparedGroupCreateData);
 
+      let profileImage: FileEntity | null = null;
+
+      if (createGroupDto.profileImageId) {
+        await qrEntityManager.getRepository(FileEntity).save({
+          id: createGroupDto.profileImageId,
+          associationId: preparedGroupCreateData.id,
+          associationType: Folder.Group,
+        });
+
+        profileImage = await qrEntityManager.getRepository(FileEntity).findOne({
+          where: {
+            id: createGroupDto.profileImageId,
+          },
+        });
+      }
+
       const preparedGroupsUsersCreateData = qrEntityManager.create(
         UserGroupEntity,
         [
@@ -53,12 +72,16 @@ export class GroupsService {
               id: preparedGroupCreateData.id,
             },
             member: groupAdmin,
+            joinStatus: UserGroupJoinStatus.Pending,
           },
           ...usersForGroup.map((user) => ({
             group: {
               id: preparedGroupCreateData.id,
             },
-            member: user,
+            member: {
+              id: user.id,
+            },
+            joinStatus: UserGroupJoinStatus.Pending,
           })),
         ],
       );
@@ -74,6 +97,7 @@ export class GroupsService {
           email: user.email,
           isActive: user.isActive,
         })),
+        profileImage,
       };
     } catch (error) {
       await queryRunner.rollbackTransaction();
@@ -84,7 +108,9 @@ export class GroupsService {
   }
 
   async getMeMemberGroups({ userId }: { userId: number }) {
-    return await this._dataSource.getRepository(UserGroupEntity).find({
+    let completeGroups: (GroupEntity | null)[];
+
+    const groups = await this._dataSource.getRepository(UserGroupEntity).find({
       where: {
         member: {
           id: userId,
@@ -94,6 +120,8 @@ export class GroupsService {
         group: true,
       },
     });
+
+    return groups;
   }
 
   async getMeAdminGroups({ userId }: { userId: number }) {
