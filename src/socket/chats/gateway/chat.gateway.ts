@@ -269,6 +269,9 @@ export class ChatGateway
     const createdGroup = await this.groupService.create(socketUser, {
       name: chatRoomDto.name,
       memberIds: members.map((member) => member.id),
+      ...(chatRoomDto.profileImageId
+        ? { profileImageId: chatRoomDto.profileImageId }
+        : {}),
     });
 
     const roomName = `room__${createdGroup.id}`;
