@@ -1,18 +1,17 @@
 import {
+  IsBoolean,
   IsEnum,
   IsInt,
   IsNotEmpty,
-  IsNumber,
   IsOptional,
   IsPositive,
   IsString,
   MinLength,
 } from 'class-validator';
-import { ICreateUser } from '../interfaces/create-user.interface';
-import { USER_ROLE } from '../constants/user.constant';
 import { ApiProperty } from '@nestjs/swagger';
+import { USER_ROLE } from '../constants/user.constant';
 
-export class CreateUserDto implements ICreateUser {
+export class CreateUserDto {
   @ApiProperty({
     example: 'useremail@gmail.com',
     type: 'string',
@@ -38,10 +37,6 @@ export class CreateUserDto implements ICreateUser {
   @MinLength(8)
   password: string;
 
-  @IsString()
-  @IsEnum(USER_ROLE)
-  role: USER_ROLE = USER_ROLE.USER;
-
   @ApiProperty({
     example: 1,
     type: 'number',
@@ -50,4 +45,25 @@ export class CreateUserDto implements ICreateUser {
   @IsPositive()
   @IsOptional()
   profilePictureId: number;
+}
+
+export class CreateUserDtoSelf extends CreateUserDto {
+  @IsEnum(USER_ROLE)
+  @IsNotEmpty()
+  @IsString()
+  role: USER_ROLE = USER_ROLE.USER;
+}
+
+export class CreateUserDtoAdmin extends CreateUserDto {
+  @ApiProperty({
+    example: USER_ROLE.USER,
+    type: 'string',
+  })
+  @IsEnum(USER_ROLE)
+  @IsNotEmpty()
+  @IsString()
+  role: USER_ROLE = USER_ROLE.USER;
+
+  @IsBoolean()
+  isActive: true = true;
 }
