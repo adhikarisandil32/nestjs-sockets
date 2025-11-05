@@ -19,5 +19,5 @@ export class GroupEntity extends DBBaseEntity {
   })
   members: UserGroupEntity[];
 
-  profileImage: FileEntity | null = null;
+  profileImage?: FileEntity;
 }

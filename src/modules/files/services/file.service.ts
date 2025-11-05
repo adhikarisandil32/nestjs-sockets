@@ -1,4 +1,4 @@
-import { FindOneOptions, Repository } from 'typeorm';
+import { FindOneOptions, In, Repository } from 'typeorm';
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { AwsService } from 'src/common/aws/services/aws.service';
@@ -60,4 +60,24 @@ export class FileService {
 
     return await this.fileRepo.save(existingFile);
   }
+
+  // not used for keep for type safety: also url: https://chatgpt.com/share/690b3fd4-48f4-8010-8f7a-1771d435956f
+
+  // async attachFilesToEntityResponse<T, K extends string>(args: {
+  //   keyForFile: K;
+  //   entityFindResponse: T;
+  //   associationIds: number[];
+  //   associationType: Folder;
+  // }): Promise<T & { [key in K]: FileEntity | null }> {
+  //   const files = await this.fileRepo.findOne({
+  //     where: {
+  //       associationId: In(args.associationIds),
+  //       associationType: args.associationType,
+  //     },
+  //   });
+
+  //   (args.entityFindResponse as any)[args.keyForFile] = files;
+
+  //   return args.entityFindResponse as T & { [key in K]: FileEntity | null };
+  // }
 }

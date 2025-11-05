@@ -5,15 +5,22 @@ import { CreateGroupDto } from '../dtos/create.group.dto';
 import { UserEntity } from 'src/modules/users/entities/user.entity';
 import { TableNames } from 'src/common/database/constants/common.constant';
 import { UserGroupEntity } from 'src/modules/users-groups/entities/users-groups.entity';
-import { BadRequestException, ForbiddenException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  ForbiddenException,
+  NotFoundException,
+} from '@nestjs/common';
 import { FileEntity } from 'src/modules/files/entities/file.entity';
 import { Folder } from 'src/modules/files/constants/folders.file-upload';
 import { UserGroupJoinStatus } from 'src/modules/users-groups/constants/user-group.constant';
+import { FileService } from 'src/modules/files/services/file.service';
 
 export class GroupsService {
   constructor(
     @InjectRepository(GroupEntity)
     private readonly _groupRepo: Repository<GroupEntity>,
+    private readonly fileService: FileService,
     private readonly _dataSource: DataSource,
   ) {}
 
@@ -48,20 +55,35 @@ export class GroupsService {
 
       await qrEntityManager.save(preparedGroupCreateData);
 
-      let profileImage: FileEntity | null = null;
+      let uploadedProfileImage: FileEntity | null = null;
 
       if (createGroupDto.profileImageId) {
-        await qrEntityManager.getRepository(FileEntity).save({
-          id: createGroupDto.profileImageId,
-          associationId: preparedGroupCreateData.id,
-          associationType: Folder.Group,
-        });
+        uploadedProfileImage = await qrEntityManager
+          .getRepository(FileEntity)
+          .findOne({
+            where: {
+              id: createGroupDto.profileImageId,
+            },
+          });
 
-        profileImage = await qrEntityManager.getRepository(FileEntity).findOne({
-          where: {
-            id: createGroupDto.profileImageId,
+        if (!uploadedProfileImage) {
+          throw new NotFoundException('profile image not found');
+        }
+
+        if (
+          uploadedProfileImage.associationId ||
+          uploadedProfileImage.associationType
+        ) {
+          throw new ConflictException('profile image already used');
+        }
+
+        await qrEntityManager.getRepository(FileEntity).update(
+          { id: createGroupDto.profileImageId },
+          {
+            associationId: preparedGroupCreateData.id,
+            associationType: Folder.Group,
           },
-        });
+        );
       }
 
       const preparedGroupsUsersCreateData = qrEntityManager.create(
@@ -72,7 +94,7 @@ export class GroupsService {
               id: preparedGroupCreateData.id,
             },
             member: groupAdmin,
-            joinStatus: UserGroupJoinStatus.Pending,
+            joinStatus: UserGroupJoinStatus.Approved,
           },
           ...usersForGroup.map((user) => ({
             group: {
@@ -89,6 +111,14 @@ export class GroupsService {
       await qrEntityManager.save(preparedGroupsUsersCreateData);
 
       await queryRunner.commitTransaction();
+
+      const profileImage = await qrEntityManager
+        .getRepository(FileEntity)
+        .findOne({
+          where: {
+            id: createGroupDto.profileImageId,
+          },
+        });
 
       return {
         ...preparedGroupCreateData,
@@ -108,20 +138,36 @@ export class GroupsService {
   }
 
   async getMeMemberGroups({ userId }: { userId: number }) {
-    let completeGroups: (GroupEntity | null)[];
-
     const groups = await this._dataSource.getRepository(UserGroupEntity).find({
       where: {
         member: {
           id: userId,
         },
+        joinStatus: UserGroupJoinStatus.Approved,
       },
       relations: {
         group: true,
       },
     });
 
-    return groups;
+    const profileImages = await this._dataSource
+      .getRepository(FileEntity)
+      .find({
+        where: {
+          associationId: In(groups.map((group) => group.group.id)),
+          associationType: Folder.Group,
+        },
+      });
+
+    return groups.map((group) => ({
+      ...group,
+      group: {
+        ...group.group,
+        profileImage:
+          profileImages.find((image) => image?.associationId === group.id) ??
+          null,
+      },
+    }));
   }
 
   async getMeAdminGroups({ userId }: { userId: number }) {
@@ -133,7 +179,21 @@ export class GroupsService {
       },
     });
 
-    return groupsMeAdmin;
+    const profileImages = await this._dataSource
+      .getRepository(FileEntity)
+      .find({
+        where: {
+          associationId: In(groupsMeAdmin.map((group) => group.id)),
+          associationType: Folder.Group,
+        },
+      });
+
+    return groupsMeAdmin.map((group) => ({
+      ...group,
+      profileImage:
+        profileImages.find((image) => image?.associationId === group.id) ??
+        null,
+    }));
   }
 
   async getGroupMembers({
