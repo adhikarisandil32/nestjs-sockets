@@ -26,6 +26,8 @@ import { IDbConfig } from '../configs/service-configs/database.config';
           entities: [__dirname + './../../**/*.entity{.ts,.js}'],
           migrations: [__dirname + './../../migrations/*{.ts,.js}'],
           logging: ['query'], // log sql queries executed
+          subscribers: [__dirname + './../../**/*.subscriber{.ts,.js}'],
+          // subscribers: [GroupEntitySubscriber],
         };
       },
       dataSourceFactory: async (options: DataSourceOptions) => {
