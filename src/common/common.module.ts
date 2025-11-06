@@ -4,6 +4,7 @@ import { ConfigModule } from './configs/config.module';
 import { LoggerModule as PinoLoggerModule } from 'nestjs-pino';
 import { ResponseModule } from './response/response.module';
 import { ErrorFilterModule } from './error/error.module';
+import { AwsModule } from './aws/aws.module';
 // import { HealthModule } from './health/health.module';
 
 @Module({
@@ -12,6 +13,7 @@ import { ErrorFilterModule } from './error/error.module';
     ErrorFilterModule,
     DatabaseModule,
     ResponseModule,
+    AwsModule,
     PinoLoggerModule.forRoot({
       pinoHttp: {
         transport: {

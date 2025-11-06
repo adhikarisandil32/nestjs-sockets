@@ -10,6 +10,9 @@ import * as bcrypt from 'bcryptjs';
 import { ConfigService } from '@nestjs/config';
 import { UserEntity } from 'src/modules/users/entities/user.entity';
 import { IJwtUser } from '../interfaces/jwt.interface';
+import { FileService } from 'src/modules/files/services/file.service';
+import { FileEntity } from 'src/modules/files/entities/file.entity';
+import { Folder } from 'src/modules/files/constants/folders.file-upload';
 
 @Injectable()
 export class AuthService {
@@ -19,6 +22,7 @@ export class AuthService {
     private readonly _usersService: UsersService,
     private readonly _jwtService: JwtService,
     private readonly _configService: ConfigService,
+    private readonly fileService: FileService,
   ) {
     this.secretKey = this._configService.get<string>('jwt.secretKey')!;
   }
@@ -28,7 +32,7 @@ export class AuthService {
       email: credentials.email,
     });
 
-    if (!existingUser) {
+    if (!existingUser || (existingUser && !existingUser.isActive)) {
       throw new NotFoundException('email or password did not match');
     }
 
@@ -55,6 +59,15 @@ export class AuthService {
     if (!userInDb) {
       throw new UnauthorizedException('no token available');
     }
+
+    const profilePicture = await this.fileService.findOne({
+      where: {
+        associationId: userInDb.id,
+        associationType: Folder.Profile,
+      },
+    });
+
+    userInDb.profilePicture = profilePicture;
 
     return userInDb;
   }

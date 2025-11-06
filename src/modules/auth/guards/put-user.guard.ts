@@ -8,6 +8,7 @@ import { Request as IRequest } from 'express';
 import { IJwtUser } from '../interfaces/jwt.interface';
 import { UsersService } from 'src/modules/users/services/users.service';
 import { UserEntity } from 'src/modules/users/entities/user.entity';
+import { USER_ROLE } from 'src/modules/users/constants/user.constant';
 
 interface IUser {
   user: IJwtUser;
@@ -29,6 +30,33 @@ export class PutUserToRequest implements CanActivate {
       const user = await this.userService.findOneById(requestUser.id);
 
       if (!user) {
+        throw new UnauthorizedException('user unauthorized');
+      }
+
+      request.__user = user;
+
+      return true;
+    } catch (error) {
+      throw error;
+    }
+  }
+}
+
+export class PutAdminToRequest implements CanActivate {
+  constructor(@Inject() private readonly userService: UsersService) {}
+
+  async canActivate(context: ExecutionContext): Promise<boolean> {
+    try {
+      const request = context.switchToHttp().getRequest<IRequest & IUser>();
+      const requestUser = request.user;
+
+      if (requestUser && !requestUser.id) {
+        throw new UnauthorizedException('user unauthorized');
+      }
+
+      const user = await this.userService.findOneById(requestUser.id);
+
+      if ((user && user.role !== USER_ROLE.ADMIN) || !user) {
         throw new UnauthorizedException('user unauthorized');
       }
 

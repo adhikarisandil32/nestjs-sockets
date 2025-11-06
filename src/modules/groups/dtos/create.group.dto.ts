@@ -28,4 +28,13 @@ export class CreateGroupDto {
   @IsInt({ each: true })
   @IsPositive({ each: true })
   memberIds: number[];
+
+  @ApiProperty({
+    type: 'number',
+    example: 1,
+  })
+  @IsOptional()
+  @IsPositive()
+  @IsInt()
+  profileImageId?: number;
 }

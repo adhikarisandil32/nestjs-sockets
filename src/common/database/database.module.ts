@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule, TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { DataSource, DataSourceOptions } from 'typeorm';
-import { IDbConfig } from '../configs/database.config';
+import { IDbConfig } from '../configs/service-configs/database.config';
 // const path = require('path')
 
 @Module({
