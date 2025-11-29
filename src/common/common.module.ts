@@ -5,6 +5,8 @@ import { LoggerModule as PinoLoggerModule } from 'nestjs-pino';
 import { ResponseModule } from './response/response.module';
 import { ErrorFilterModule } from './error/error.module';
 import { AwsModule } from './aws/aws.module';
+import { AppBullModule } from './bullmq/bullmq.module';
+import { RedisModule } from './redis/redis.module';
 // import { HealthModule } from './health/health.module';
 
 @Module({
@@ -25,6 +27,8 @@ import { AwsModule } from './aws/aws.module';
         level: 'error',
       },
     }),
+    AppBullModule,
+    RedisModule,
     // HealthModule,
   ],
   exports: [],
