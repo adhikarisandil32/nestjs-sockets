@@ -42,3 +42,4 @@ services:
       - '8001:8001'
     volumes:
       - ../${APP_NAME}_redis_data:/data
+    restart: 'unless-stopped'
