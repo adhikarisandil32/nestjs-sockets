@@ -11,9 +11,7 @@ import { ConfigService } from '@nestjs/config';
 import { UserEntity } from 'src/modules/users/entities/user.entity';
 import { IJwtUser } from '../interfaces/jwt.interface';
 import { FileService } from 'src/modules/files/services/file.service';
-import { FileEntity } from 'src/modules/files/entities/file.entity';
 import { Folder } from 'src/modules/files/constants/folders.file-upload';
-import { RedisService } from 'src/common/redis/services/redis.service';
 
 @Injectable()
 export class AuthService {
@@ -24,7 +22,6 @@ export class AuthService {
     private readonly _jwtService: JwtService,
     private readonly _configService: ConfigService,
     private readonly fileService: FileService,
-    private readonly redisService: RedisService,
   ) {
     this.secretKey = this._configService.get<string>('jwt.secretKey')!;
   }
@@ -56,13 +53,6 @@ export class AuthService {
   }
 
   async getMe(user: IJwtUser): Promise<UserEntity> {
-    const redisKey = 'authenticatedUser';
-    const result = await this.redisService.getValue(redisKey);
-
-    if (result) {
-      return JSON.parse(result) as any;
-    }
-
     const userInDb = await this._usersService.findOneById(user.id);
 
     if (!userInDb) {
@@ -77,11 +67,6 @@ export class AuthService {
     });
 
     userInDb.profilePicture = profilePicture;
-
-    await this.redisService.setValue(
-      'authenticatedUser',
-      JSON.stringify(userInDb),
-    );
 
     return userInDb;
   }
