@@ -3,6 +3,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule, TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { DataSource, DataSourceOptions } from 'typeorm';
 import { IDbConfig } from '../configs/service-configs/database.config';
+import { APP_MODE } from '../configs/service-configs/app.config';
 // const path = require('path')
 
 @Module({
@@ -25,9 +26,21 @@ import { IDbConfig } from '../configs/service-configs/database.config';
           synchronize: dbConfig?.synchronize,
           entities: [__dirname + './../../**/*.entity{.ts,.js}'],
           migrations: [__dirname + './../../migrations/*{.ts,.js}'],
-          logging: ['query'], // log sql queries executed
+          ...(configService.get<string>('app.mode') === APP_MODE.DEV
+            ? { logging: ['query'] } // log sql queries executed
+            : {}),
           subscribers: [__dirname + './../../**/*.subscriber{.ts,.js}'],
           // subscribers: [GroupEntitySubscriber],
+          cache: {
+            type: 'redis',
+            options: {
+              password: configService.get<string>('redis.password'),
+              socket: {
+                host: configService.get<string>('redis.host'),
+                port: configService.get<number>('redis.port'),
+              },
+            },
+          },
         };
       },
       dataSourceFactory: async (options: DataSourceOptions) => {
