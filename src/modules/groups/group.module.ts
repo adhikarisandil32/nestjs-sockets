@@ -3,9 +3,10 @@ import { GroupsService } from './services/group.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { GroupEntity } from './entities/group.entity';
 import { FileModule } from '../files/file.module';
+import { RedisModule } from 'src/common/redis/redis.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([GroupEntity]), FileModule],
+  imports: [TypeOrmModule.forFeature([GroupEntity]), FileModule, RedisModule],
   providers: [GroupsService],
   exports: [GroupsService],
 })

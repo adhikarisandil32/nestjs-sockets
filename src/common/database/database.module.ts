@@ -29,7 +29,7 @@ import { APP_MODE } from '../configs/service-configs/app.config';
           ...(configService.get<string>('app.mode') === APP_MODE.DEV
             ? { logging: ['query'] } // log sql queries executed
             : {}),
-          subscribers: [__dirname + './../../**/*.subscriber{.ts,.js}'],
+          // subscribers: [__dirname + './../../**/*.subscriber{.ts,.js}'],
           // subscribers: [GroupEntitySubscriber],
           cache: {
             type: 'redis',

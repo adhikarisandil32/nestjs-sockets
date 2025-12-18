@@ -87,4 +87,9 @@ export class GroupsController {
       requestingUser: user,
     });
   }
+
+  @Get('get-all')
+  async getAllGroups() {
+    return await this._groupService.getAll();
+  }
 }

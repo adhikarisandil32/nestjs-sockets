@@ -9,20 +9,50 @@ import {
   BadRequestException,
   ConflictException,
   ForbiddenException,
+  Inject,
+  Logger,
   NotFoundException,
+  OnModuleInit,
 } from '@nestjs/common';
 import { FileEntity } from 'src/modules/files/entities/file.entity';
 import { Folder } from 'src/modules/files/constants/folders.file-upload';
 import { UserGroupJoinStatus } from 'src/modules/users-groups/constants/user-group.constant';
 import { FileService } from 'src/modules/files/services/file.service';
+import { REDIS_CLIENT_CONNECTION } from 'src/common/redis/redis.constant';
+import { RedisClientType } from 'redis';
 
-export class GroupsService {
+const GROUP_PREFIX_REDIS = 'groups';
+export class GroupsService implements OnModuleInit {
   constructor(
     @InjectRepository(GroupEntity)
     private readonly _groupRepo: Repository<GroupEntity>,
     private readonly fileService: FileService,
     private readonly _dataSource: DataSource,
+    @Inject(REDIS_CLIENT_CONNECTION) private readonly redis: RedisClientType,
   ) {}
+
+  async onModuleInit() {
+    // const logger = new Logger(GroupsService.name);
+    // const groups = await this._dataSource.getRepository(GroupEntity).find({
+    //   cache: {
+    //     id: GROUP_PREFIX_REDIS,
+    //     milliseconds: 60 * 60 * 1000,
+    //   },
+    // });
+    // const cache = this._dataSource.queryResultCache;
+    // console.log({ cache });
+  }
+
+  async getAll() {
+    const groups = await this._groupRepo.find({
+      cache: {
+        id: GROUP_PREFIX_REDIS,
+        milliseconds: 60 * 60 * 1000,
+      },
+    });
+
+    return groups;
+  }
 
   async create(groupAdmin: UserEntity, createGroupDto: CreateGroupDto) {
     const usersForGroup = await this._dataSource
