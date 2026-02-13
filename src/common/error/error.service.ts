@@ -83,13 +83,12 @@ export class WsErrorService extends BaseWsExceptionFilter {
       }
 
       console.log(`timestamp: ${Date.now()}`, exception);
-      client.emit(SocketEvents.Error, errorMessage);
     } catch (error) {
       console.log(`timestamp: ${Date.now()}`, error);
       errorMessage = error?.message || 'Request Execution Failed';
-
-      client.emit(SocketEvents.Error, errorMessage);
     }
+
+    client.emit(SocketEvents.Error, errorMessage);
 
     return;
   }
