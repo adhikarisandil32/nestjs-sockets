@@ -49,10 +49,10 @@ export class HTTPErrorService implements ExceptionFilter {
         path: httpRequest.url,
       });
 
-      console.log(exception);
+      console.log(`timestamp: ${Date.now()}`, exception);
       return;
     } catch (error) {
-      console.log(error);
+      console.log(`timestamp: ${Date.now()}`, error);
       const message = exception?.message || 'Internal Server Error';
       const statusCode = HttpStatus.INTERNAL_SERVER_ERROR;
 
@@ -82,10 +82,10 @@ export class WsErrorService extends BaseWsExceptionFilter {
         errorMessage = exception.message ?? 'Request Failed';
       }
 
-      console.log(exception);
+      console.log(`timestamp: ${Date.now()}`, exception);
       client.emit(SocketEvents.Error, errorMessage);
     } catch (error) {
-      console.log(error);
+      console.log(`timestamp: ${Date.now()}`, error);
       errorMessage = error?.message || 'Request Execution Failed';
 
       client.emit(SocketEvents.Error, errorMessage);
