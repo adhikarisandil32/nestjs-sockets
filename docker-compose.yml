@@ -1,6 +1,9 @@
 volumes:
+  volume_data:
+  volume_data2:
   database_volume_data:
     name: '${DATABASE_NAME}_pg_data'
+
 services:
   database:
     container_name: '${APP_NAME}_db'
@@ -18,22 +21,6 @@ services:
       - ../${APP_NAME}_pg_data:/var/lib/postgresql/data
       # - ../data/postgres/initdb.d:/docker-entrypoint-initdb.d
 
-  minio:
-    container_name: '${APP_NAME}_minio'
-    image: quay.io/minio/minio:RELEASE.2022-02-18T01-50-10Z
-    volumes:
-      - ../minio_data:/data
-    ports:
-      - ${MINIO_PORT}:${MINIO_PORT}
-      - ${MINIO_CONSOLE_PORT}:${MINIO_CONSOLE_PORT}
-    environment:
-      MINIO_ROOT_USER: '${MINIO_ROOT_USER}'
-      MINIO_ROOT_PASSWORD: '${MINIO_ROOT_PASSWORD}'
-      MINIO_ADDRESS: ':${MINIO_PORT}'
-      MINIO_CONSOLE_ADDRESS: ':${MINIO_CONSOLE_PORT}'
-    restart: 'unless-stopped'
-    command: minio server /data
-
   redis:
     container_name: '${APP_NAME}_redis'
     image: 'redis/redis-stack:latest'
@@ -43,3 +30,30 @@ services:
     volumes:
       - ../${APP_NAME}_redis_data:/data
     restart: 'unless-stopped'
+
+  storage:
+    container_name: '${APP_NAME}_storage'
+    image: chrislusf/seaweedfs
+    command: server -s3 -dir=/data
+    ports:
+      - '9333:9333' # Master API
+      - '8888:8888' # Filer UI
+      - '8333:8333' # S3 API
+    volumes:
+      - ../storage_data:/data
+
+  # minio:
+  #     container_name: '${APP_NAME}_minio'
+  #     image: quay.io/minio/minio:RELEASE.2022-02-18T01-50-10Z
+  #     volumes:
+  #       - ../minio_data:/data
+  #     ports:
+  #       - ${MINIO_PORT}:${MINIO_PORT}
+  #       - ${MINIO_CONSOLE_PORT}:${MINIO_CONSOLE_PORT}
+  #     environment:
+  #       MINIO_ROOT_USER: '${MINIO_ROOT_USER}'
+  #       MINIO_ROOT_PASSWORD: '${MINIO_ROOT_PASSWORD}'
+  #       MINIO_ADDRESS: ':${MINIO_PORT}'
+  #       MINIO_CONSOLE_ADDRESS: ':${MINIO_CONSOLE_PORT}'
+  #     restart: 'unless-stopped'
+  #     command: minio server /data
