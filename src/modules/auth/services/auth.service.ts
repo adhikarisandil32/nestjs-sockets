@@ -11,7 +11,6 @@ import { ConfigService } from '@nestjs/config';
 import { UserEntity } from 'src/modules/users/entities/user.entity';
 import { IJwtUser } from '../interfaces/jwt.interface';
 import { FileService } from 'src/modules/files/services/file.service';
-import { FileEntity } from 'src/modules/files/entities/file.entity';
 import { Folder } from 'src/modules/files/constants/folders.file-upload';
 
 @Injectable()

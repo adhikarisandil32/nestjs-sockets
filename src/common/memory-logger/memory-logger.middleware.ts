@@ -33,7 +33,7 @@ export class MemoryLoggerMiddleware implements NestMiddleware {
           arrayBuffers: `${(endUsage.arrayBuffers / (1024 * 1024)).toFixed(2)} MB`,
         };
 
-        const filePath = './request_memory_usage_logs.txt';
+        const filePath = './request_memory_usage_logs.log';
 
         if (!fs.existsSync(filePath)) {
           fs.writeFile(
@@ -51,12 +51,11 @@ export class MemoryLoggerMiddleware implements NestMiddleware {
 
         fs.appendFile(
           filePath,
-          ', ' +
-            JSON.stringify({
-              path: req.path,
-              beforeResponse: startUsageInMb,
-              afterResponse: endUsageInMb,
-            }),
+          JSON.stringify({
+            path: req.path,
+            beforeResponse: startUsageInMb,
+            afterResponse: endUsageInMb,
+          }) + '\n',
           () => null,
         );
       });

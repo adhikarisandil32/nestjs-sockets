@@ -5,6 +5,7 @@ import { ConfigService } from '@nestjs/config';
 import * as fs from 'fs';
 import { APP_MODE } from './common/configs/service-configs/app.config';
 import { swaggerInit } from './swagger';
+import * as statusMonitor from 'express-status-monitor';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
@@ -21,50 +22,57 @@ async function bootstrap() {
     }),
   );
 
-  if (configService.get<string>('app.mode') === APP_MODE.DEV) {
-    // to monitor the nestapp's process memory
+  // if (configService.get<string>('app.mode') === APP_MODE.DEV) {
+  //   // to monitor the nestapp's process memory
 
-    const filePath = './app_memory_usage_logs.txt';
+  //   const filePath = './app_memory_usage_logs.log';
 
-    try {
-      setInterval(() => {
-        const processMemory = process.memoryUsage();
+  //   try {
+  //     setInterval(() => {
+  //       const processMemory = process.memoryUsage();
 
-        // if memory exceeds 500MB, log the memory info
-        if (processMemory.rss > 500 * 1024 * 1024) {
-          const processMemoryInMb = {
-            datetime: Date.now(),
-            rss: `${(processMemory.rss / (1024 * 1024)).toFixed(2)} MB`,
-            heapTotal: `${(processMemory.heapTotal / (1024 * 1024)).toFixed(2)} MB`,
-            heapUsed: `${(processMemory.heapUsed / (1024 * 1024)).toFixed(2)} MB`,
-            external: `${(processMemory.external / (1024 * 1024)).toFixed(2)} MB`,
-            arrayBuffers: `${(processMemory.arrayBuffers / (1024 * 1024)).toFixed(2)} MB`,
-          };
+  //       // if memory exceeds 500MB, log the memory info
+  //       if (processMemory.rss > 500 * 1024 * 1024) {
+  //         const processMemoryInMb = {
+  //           datetime: Date.now(),
+  //           rss: `${(processMemory.rss / (1024 * 1024)).toFixed(2)} MB`,
+  //           heapTotal: `${(processMemory.heapTotal / (1024 * 1024)).toFixed(2)} MB`,
+  //           heapUsed: `${(processMemory.heapUsed / (1024 * 1024)).toFixed(2)} MB`,
+  //           external: `${(processMemory.external / (1024 * 1024)).toFixed(2)} MB`,
+  //           arrayBuffers: `${(processMemory.arrayBuffers / (1024 * 1024)).toFixed(2)} MB`,
+  //         };
 
-          if (!fs.existsSync(filePath)) {
-            fs.writeFile(
-              filePath,
-              JSON.stringify(processMemoryInMb),
-              () => null,
-            );
-            return;
-          }
+  //         if (!fs.existsSync(filePath)) {
+  //           fs.writeFile(
+  //             filePath,
+  //             JSON.stringify(processMemoryInMb),
+  //             () => null,
+  //           );
+  //           return;
+  //         }
 
-          fs.appendFile(
-            filePath,
-            ', ' + JSON.stringify(processMemoryInMb),
-            () => null,
-          );
+  //         fs.appendFile(
+  //           filePath,
+  //           ', ' + JSON.stringify(processMemoryInMb),
+  //           () => null,
+  //         );
 
-          return;
-        }
-      }, 1000);
-    } catch (error) {
-      console.log(new Error(error));
-    }
+  //         return;
+  //       }
+  //     }, 1000);
+  //   } catch (error) {
+  //     console.log(new Error(error));
+  //   }
+  // }
+
+  if (configService.get<string>('app.mode') !== APP_MODE.PROD) {
+    app.use(
+      statusMonitor({
+        title: 'NestSocket Status Monitor',
+      }),
+    );
+    await swaggerInit(app);
   }
-
-  await swaggerInit(app);
 
   await app
     .listen(port)
