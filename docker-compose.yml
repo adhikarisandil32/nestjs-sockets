@@ -31,16 +31,17 @@ services:
       - ../${APP_NAME}_redis_data:/data
     restart: 'unless-stopped'
 
-  storage:
-    container_name: '${APP_NAME}_storage'
-    image: chrislusf/seaweedfs
-    command: server -s3 -dir=/data
-    ports:
-      - '9333:9333' # Master API
-      - '8888:8888' # Filer UI
-      - '8333:8333' # S3 API
-    volumes:
-      - ../storage_data:/data
+  # Not enough setup
+  # storage:
+  #   container_name: '${APP_NAME}_storage'
+  #   image: chrislusf/seaweedfs
+  #   command: server -s3 -dir=/data
+  #   ports:
+  #     - '9333:9333' # Master API
+  #     - '8888:8888' # Filer UI
+  #     - '8333:8333' # S3 API
+  #   volumes:
+  #     - ../storage_data:/data
 
   # minio:
   #     container_name: '${APP_NAME}_minio'
