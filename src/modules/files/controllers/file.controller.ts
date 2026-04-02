@@ -30,15 +30,15 @@ export class FileController {
     @UploadedFile() file: Express.Multer.File,
     @Body() fileInfo: SingleFileUploadDto,
   ) {
-    const fileExtension = file.originalname.split('.')?.at(-1);
-    const randomName = crypto.randomUUID();
-
-    const addedFile = await this.fileUploadService.addFile(file, {
-      path: fileInfo.folder,
-      fileName: `${randomName}.${fileExtension}`,
-    });
-
-    return addedFile;
+    const { buffer, stream, ...others } = file;
+    return { ...others };
+    // const fileExtension = file.originalname.split('.')?.at(-1);
+    // const randomName = crypto.randomUUID();
+    // const addedFile = await this.fileUploadService.addFile(file, {
+    //   path: fileInfo.folder,
+    //   fileName: `${randomName}.${fileExtension}`,
+    // });
+    // return addedFile;
   }
 
   @Post('images/uploads')
