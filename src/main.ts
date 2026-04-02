@@ -2,10 +2,10 @@ import { NestApplication, NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import * as fs from 'fs';
 import { APP_MODE } from './common/configs/service-configs/app.config';
 import { swaggerInit } from './swagger';
 import * as statusMonitor from 'express-status-monitor';
+import * as path from 'path';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
@@ -73,6 +73,10 @@ async function bootstrap() {
     );
     await swaggerInit(app);
   }
+
+  app.useStaticAssets(path.join(process.cwd(), 'uploads'), {
+    prefix: '/uploads/', //when fetched with this prefix, the static file gets served
+  });
 
   await app
     .listen(port)
