@@ -3,9 +3,10 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AwsModule } from 'src/common/aws/aws.module';
 import { FileEntity } from './entities/file.entity';
 import { FileService } from './services/file.service';
+import { MulterModule } from 'src/common/multer/multer.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([FileEntity]), AwsModule],
+  imports: [TypeOrmModule.forFeature([FileEntity]), AwsModule, MulterModule],
   providers: [FileService],
   exports: [FileService],
 })
