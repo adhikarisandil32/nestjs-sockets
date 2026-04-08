@@ -68,7 +68,7 @@ export class ChatGateway
   }
 
   afterInit(server: Server) {
-    server.use(async (socket: AuthenticatedSocket, next) => {
+    server.use(async (socket: Socket, next) => {
       try {
         const token = socket.handshake.headers.authorization?.split(' ')[1];
 
@@ -88,12 +88,13 @@ export class ChatGateway
           throw new WsException('user not available');
         }
 
-        socket.handshake.__user = associatedUser;
+        (socket as AuthenticatedSocket).handshake.__user = associatedUser;
 
         next();
       } catch (error) {
+        const err = error as Error;
         socket.disconnect();
-        next(error);
+        next(err);
       }
     });
   }
@@ -328,7 +329,9 @@ export class ChatGateway
 
       throw new WsException('no group or receiver id provided');
     } catch (error) {
-      throw new WsException(error.message ?? 'Request Execution Failed');
+      throw new WsException(
+        (error as any)?.message ?? 'Request Execution Failed',
+      );
     }
   }
 
