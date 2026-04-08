@@ -4,7 +4,7 @@ import { Logger, ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { APP_MODE } from './common/configs/service-configs/app.config';
 import { swaggerInit } from './swagger';
-import * as statusMonitor from 'express-status-monitor';
+import statusMonitor from 'express-status-monitor';
 import * as path from 'path';
 
 async function bootstrap() {
@@ -68,7 +68,7 @@ async function bootstrap() {
   if (configService.get<string>('app.mode') !== APP_MODE.PROD) {
     app.use(
       statusMonitor({
-        title: 'NestSocket Status Monitor',
+        title: 'Nestjs Socket Status Monitor',
       }),
     );
     await swaggerInit(app);
