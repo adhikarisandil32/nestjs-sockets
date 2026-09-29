@@ -39,7 +39,13 @@ interface IConnectedUser {
 }
 
 @UseFilters(new WsErrorService())
-@WebSocketGateway({ cors: true, namespace: SocketNamespaces.Chat })
+@WebSocketGateway({
+  cors: true,
+  namespace: SocketNamespaces.Chat,
+  // uncomment below in case of "RSV1 must be clear" issue
+  // transports: ['websocket'],
+  // perMessageDeflate: false,
+})
 // @UseGuards(WsJwtAuthGuard)
 export class ChatGateway
   implements OnGatewayConnection, OnGatewayDisconnect, OnGatewayInit
