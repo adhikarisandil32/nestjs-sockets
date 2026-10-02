@@ -43,7 +43,7 @@ interface IConnectedUser {
   cors: true,
   namespace: SocketNamespaces.Chat,
   // uncomment below in case of "RSV1 must be clear" issue
-  // transports: ['websocket'],
+  transports: ['websocket'],
   // perMessageDeflate: false,
 })
 // @UseGuards(WsJwtAuthGuard)
