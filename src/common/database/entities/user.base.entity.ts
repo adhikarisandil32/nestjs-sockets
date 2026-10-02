@@ -15,7 +15,6 @@ export class UserBaseEntity extends DBBaseEntity {
   password: string;
 
   @BeforeInsert()
-  @BeforeUpdate()
   private async hashPassword() {
     if (this.password) {
       this.password = await bcrypt.hash(this.password, 10);
